@@ -53,7 +53,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <p className="text-xl font-medium tracking-tight">Settings</p>
         <p className="text-xs text-text-muted mt-0.5">Accounts, playbooks, and preferences</p>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
       <div>
         <p className="text-sm text-text-secondary mb-3">Your accounts</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {accounts.map((account) => (
             <div
               key={account.id}
@@ -102,7 +102,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
       <div>
         <p className="text-sm text-text-secondary mb-3">Add an account</p>
         <form

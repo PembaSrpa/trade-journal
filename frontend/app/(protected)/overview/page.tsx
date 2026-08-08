@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   TrendingUp, Target, Percent, Clock, TrendingDown, CircleDot,
   Flame, LineChart, CalendarDays, ListChecks, Newspaper, Brain,
-  Activity, AlertTriangle, BarChart2,
+  Activity, AlertTriangle,
 } from "lucide-react";
 import {
   LineChart as ReLineChart,
@@ -63,7 +63,7 @@ export default function OverviewPage() {
       ) : (
         <>
           {/* ── Top stat strip ─────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <StatCard icon={Percent} label="Win rate" value={`${stats.win_rate}%`} />
             <StatCard icon={TrendingUp} label="Net P/L"
               value={`${stats.net_pnl >= 0 ? "+" : ""}$${stats.net_pnl.toLocaleString()}`}
@@ -93,7 +93,7 @@ export default function OverviewPage() {
           </div>
 
           {/* ── Secondary stats ──────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <StatCard icon={TrendingUp} label="Expectancy"
               value={`${stats.expectancy >= 0 ? "+" : ""}$${stats.expectancy}`}
               tone={stats.expectancy >= 0 ? "success" : "danger"} />
@@ -144,7 +144,7 @@ export default function OverviewPage() {
           {stats.setup_breakdown.length > 0 && (
             <div className="mb-6">
               <SectionHeader icon={ListChecks} title="By setup" />
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {stats.setup_breakdown.map((s) => (
                   <div key={s.setup_tag} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between">
                     <div>
@@ -184,7 +184,11 @@ export default function OverviewPage() {
                         const meta = emotionMeta(e.emotional_state);
                         return (
                           <div key={e.emotional_state} className="flex items-center gap-3">
-                            <span className="text-lg w-6 flex-shrink-0">{meta.emoji}</span>
+                            <span
+                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                meta.tone === "good" ? "bg-success" : meta.tone === "bad" ? "bg-danger" : "bg-text-muted"
+                              }`}
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <p className="text-xs font-medium">{meta.label}</p>
@@ -218,11 +222,10 @@ export default function OverviewPage() {
                     <p className="text-sm text-text-secondary mb-4">Win rate by session</p>
                     <div className="space-y-2.5">
                       {stats.session_breakdown.map((s) => {
-                        const icons: Record<string, string> = { london: "🇬🇧", new_york: "🗽", asia: "🌏", unknown: "🌐" };
                         const labels: Record<string, string> = { london: "London", new_york: "New York", asia: "Asia", unknown: "Other" };
                         return (
                           <div key={s.session} className="flex items-center gap-3">
-                            <span className="text-lg w-6 flex-shrink-0">{icons[s.session] ?? "🌐"}</span>
+                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-accent" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <p className="text-xs font-medium">{labels[s.session] ?? s.session}</p>

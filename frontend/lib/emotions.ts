@@ -7,25 +7,24 @@ export const EMOTIONAL_STATES: EmotionalState[] = [
 
 interface EmotionMeta {
   label: string;
-  emoji: string;
   // "good" = constructive states, "bad" = states worth watching, "neutral" = context-dependent
   tone: "good" | "bad" | "neutral";
 }
 
 const META: Record<EmotionalState, EmotionMeta> = {
-  confident: { label: "Confident", emoji: "💪", tone: "good" },
-  calm: { label: "Calm", emoji: "🧘", tone: "good" },
-  disciplined: { label: "Disciplined", emoji: "🎯", tone: "good" },
-  hesitant: { label: "Hesitant", emoji: "🤔", tone: "neutral" },
-  bored: { label: "Bored", emoji: "🥱", tone: "neutral" },
-  anxious: { label: "Anxious", emoji: "😰", tone: "bad" },
-  fomo: { label: "FOMO", emoji: "🏃", tone: "bad" },
-  greedy: { label: "Greedy", emoji: "🤑", tone: "bad" },
-  revenge: { label: "Revenge", emoji: "😡", tone: "bad" },
+  confident: { label: "Confident", tone: "good" },
+  calm: { label: "Calm", tone: "good" },
+  disciplined: { label: "Disciplined", tone: "good" },
+  hesitant: { label: "Hesitant", tone: "neutral" },
+  bored: { label: "Bored", tone: "neutral" },
+  anxious: { label: "Anxious", tone: "bad" },
+  fomo: { label: "FOMO", tone: "bad" },
+  greedy: { label: "Greedy", tone: "bad" },
+  revenge: { label: "Revenge", tone: "bad" },
 };
 
 export function emotionMeta(state: string): EmotionMeta {
-  return (META as Record<string, EmotionMeta>)[state] ?? { label: state, emoji: "❔", tone: "neutral" };
+  return (META as Record<string, EmotionMeta>)[state] ?? { label: state, tone: "neutral" };
 }
 
 export function emotionToneClass(state: string): string {

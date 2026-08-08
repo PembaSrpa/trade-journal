@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Download, FileText, Plus } from "lucide-react";
+import { AlertTriangle, Download, FileText, Plus } from "lucide-react";
 import { apiDownload, apiGet } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
@@ -155,7 +155,7 @@ export default function JournalPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 mb-6">
           {trades.map((trade) => (
             <Link key={trade.id} href={`/journal/${trade.id}`}>
               <div className="bg-surface border border-border rounded-2xl p-4 hover:border-accent/50 hover:bg-surface-2 transition-colors h-full">
@@ -165,7 +165,9 @@ export default function JournalPage() {
                       {trade.pair} <span className="text-text-muted font-normal">· {trade.direction === "long" ? "Long" : "Short"}</span>
                     </p>
                     {trade.is_revenge_trade && (
-                      <span className="text-xs bg-danger/15 text-danger border border-danger/30 rounded-full px-2 py-0.5 flex-shrink-0">⚠ Revenge</span>
+                      <span className="text-xs bg-danger/15 text-danger border border-danger/30 rounded-full px-2 py-0.5 flex-shrink-0 flex items-center gap-1">
+                        <AlertTriangle size={10} /> Revenge
+                      </span>
                     )}
                   </div>
                   {trade.pips !== null && (
@@ -181,7 +183,7 @@ export default function JournalPage() {
                   </p>
                   {trade.emotional_state && (
                     <span className="text-xs text-text-secondary">
-                      {emotionMeta(trade.emotional_state).emoji} {emotionMeta(trade.emotional_state).label}
+                      {emotionMeta(trade.emotional_state).label}
                     </span>
                   )}
                   {trade.confidence_score !== null && trade.confidence_score !== undefined && (

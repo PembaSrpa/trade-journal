@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { Direction, EmotionalState, ExitType, LotUnit, Playbook, Trade } from "@/lib/types";
 import { EMOTIONAL_STATES, emotionMeta } from "@/lib/emotions";
+import { DateTimePicker } from "@/components/DateTimePicker";
 
 interface TradeFormProps {
   accountId: string;
@@ -176,7 +177,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="columns-1 lg:columns-2 2xl:columns-3 gap-4 [&>*]:break-inside-avoid [&>*]:mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
       <div className="bg-surface border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <input
@@ -221,13 +222,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
           </div>
           <div>
             <label className="block text-xs text-text-secondary mb-1">Entry time</label>
-            <input
-              type="datetime-local"
-              value={entryTime}
-              onChange={(e) => setEntryTime(e.target.value)}
-              className="w-full"
-              required
-            />
+            <DateTimePicker value={entryTime} onChange={setEntryTime} required />
           </div>
         </div>
 
@@ -244,12 +239,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
           </div>
           <div>
             <label className="block text-xs text-text-secondary mb-1">Exit time</label>
-            <input
-              type="datetime-local"
-              value={exitTime}
-              onChange={(e) => setExitTime(e.target.value)}
-              className="w-full"
-            />
+            <DateTimePicker value={exitTime} onChange={setExitTime} />
           </div>
         </div>
 
@@ -265,28 +255,17 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
 
       <SectionCard icon={Brain} title="Psychology" subtitle="How you felt going into this trade">
         <div className="mb-4">
-          <label className="block text-xs text-text-secondary mb-2">Emotional state</label>
-          <div className="grid grid-cols-3 gap-2">
-            {EMOTIONAL_STATES.map((state) => {
-              const meta = emotionMeta(state);
-              const selected = emotionalState === state;
-              return (
-                <button
-                  key={state}
-                  type="button"
-                  onClick={() => setEmotionalState(selected ? "" : state)}
-                  className={`!rounded-xl flex flex-col items-center gap-1 py-2.5 text-xs ${
-                    selected
-                      ? "bg-accent-dim border-accent text-accent-glow"
-                      : "bg-bg text-text-secondary"
-                  }`}
-                >
-                  <span className="text-base leading-none">{meta.emoji}</span>
-                  {meta.label}
-                </button>
-              );
-            })}
-          </div>
+          <label className="block text-xs text-text-secondary mb-1">Emotional state</label>
+          <select
+            value={emotionalState}
+            onChange={(e) => setEmotionalState(e.target.value as EmotionalState | "")}
+            className="w-full"
+          >
+            <option value="">Not set</option>
+            {EMOTIONAL_STATES.map((state) => (
+              <option key={state} value={state}>{emotionMeta(state).label}</option>
+            ))}
+          </select>
         </div>
 
         <div>

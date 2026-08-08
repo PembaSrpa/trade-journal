@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, AlertTriangle, Brain } from "lucide-react";
 import { apiDelete, apiGet } from "@/lib/api";
 import { getSignedScreenshotUrl } from "@/lib/screenshots";
 import { emotionMeta } from "@/lib/emotions";
@@ -62,7 +62,7 @@ export default function TradeDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         {/* Column 1: Core trade data */}
         <div className="xl:col-span-1 space-y-4">
@@ -94,7 +94,7 @@ export default function TradeDetailPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Field label="Entry price" value={trade.entry_price.toString()} />
             <Field label="Exit price" value={trade.exit_price?.toString() ?? "—"} />
             <Field label="Initial SL" value={trade.initial_sl?.toString() ?? "—"} />
@@ -125,7 +125,17 @@ export default function TradeDetailPage() {
               <p className="text-xs text-text-secondary mb-3">Psychology at entry</p>
               {emotion && (
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">{emotion.emoji}</span>
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      emotion.tone === "good"
+                        ? "bg-success/15 text-success"
+                        : emotion.tone === "bad"
+                        ? "bg-danger/15 text-danger"
+                        : "bg-surface-2 text-text-secondary"
+                    }`}
+                  >
+                    <Brain size={18} />
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{emotion.label}</p>
                     <p className="text-xs text-text-muted">Emotional state</p>

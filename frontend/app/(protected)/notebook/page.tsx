@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { NotebookPen, Save } from "lucide-react";
-import { apiGet, apiPost } from "@/lib/api";
+import { NotebookPen, Save, Trash2 } from "lucide-react";
+import { apiDelete, apiGet, apiPost } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import type { NotebookEntry } from "@/lib/types";
@@ -77,6 +77,16 @@ export default function NotebookPage() {
     textareaRef.current?.focus();
   }
 
+  async function handleDelete(entry: NotebookEntry) {
+    if (!confirm(`Delete the notebook entry for ${entry.entry_date}? This can't be undone.`)) return;
+    await apiDelete(`/notebook/${entry.id}`);
+    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    if (entry.entry_date === selectedDate) {
+      skipNextSyncRef.current = true;
+      setContent("");
+    }
+  }
+
   return (
     <div className="w-full">
       <div className="mb-6">
@@ -86,7 +96,7 @@ export default function NotebookPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2">
           <div
             ref={editorRef}
@@ -133,7 +143,7 @@ export default function NotebookPage() {
           ) : entries.length === 0 ? (
             <p className="text-text-secondary text-sm">No notebook entries yet.</p>
           ) : (
-            <div className="columns-1 xl:columns-2 gap-3 [&>*]:break-inside-avoid [&>*]:mb-3">
+            <div className="columns-1 xl:columns-2 gap-4 [&>*]:break-inside-avoid [&>*]:mb-4">
               {entries.map((entry) => {
                 const expanded = expandedId === entry.id;
                 const isLong = entry.content.length > 280;
@@ -144,12 +154,20 @@ export default function NotebookPage() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-text-muted">{entry.entry_date}</p>
-                      <button
-                        onClick={() => handleEditClick(entry.entry_date)}
-                        className="!bg-transparent !border-none !p-0 text-xs text-accent-glow"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleEditClick(entry.entry_date)}
+                          className="!bg-transparent !border-none !p-0 text-xs text-accent-glow"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(entry)}
+                          className="!bg-transparent !border-none !p-0 text-xs text-text-muted hover:text-danger flex items-center gap-1"
+                        >
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      </div>
                     </div>
                     <p
                       className={`text-sm leading-relaxed whitespace-pre-wrap ${
