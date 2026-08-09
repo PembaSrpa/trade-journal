@@ -16,7 +16,6 @@ import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { readCache, writeCache } from "@/lib/dataCache";
 import type { SyncStatus } from "@/lib/useCachedFetch";
-import { SyncBadge } from "@/components/SyncBadge";
 import { NotebookEntriesSkeleton } from "@/components/skeletons/NotebookSkeleton";
 import type { NotebookEntry } from "@/lib/types";
 
@@ -177,15 +176,7 @@ export default function NotebookPage() {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-xl font-medium tracking-tight">Notebook</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-text-muted">
-              Pre-market bias, session reviews, anything not tied to one trade
-            </p>
-            <SyncBadge status={status} cachedAt={cachedAt} />
-          </div>
-        </div>
+        <p className="text-xl font-medium tracking-tight">Notebook</p>
         {entries.length > 0 && (
           <p className="text-xs text-text-muted">{entries.length} entr{entries.length === 1 ? "y" : "ies"}</p>
         )}

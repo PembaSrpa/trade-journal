@@ -8,7 +8,6 @@ import { isCombinedSelection } from "@/lib/accountSelection";
 import { getPendingCount, flushQueue } from "@/lib/offlineSync";
 import { PlaybookManager } from "@/components/PlaybookManager";
 import { AccountListSkeleton } from "@/components/skeletons/SettingsSkeleton";
-import { SyncBadge } from "@/components/SyncBadge";
 import type { Account, AccountType } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -18,7 +17,6 @@ export default function SettingsPage() {
     selectedAccountId,
     loading: accountsLoading,
     accountsStatus,
-    accountsCachedAt,
     triggerSync,
   } = useAccountContext();
   const [name, setName] = useState("");
@@ -80,35 +78,27 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-center justify-between gap-3">
         <p className="text-xl font-medium tracking-tight">Settings</p>
-        <p className="text-xs text-text-muted mt-0.5">Accounts, playbooks, and preferences</p>
-      </div>
-
-      <div className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium">Sync</p>
-          <p className="text-xs text-text-muted mt-0.5">
-            {pendingCount > 0
-              ? `${pendingCount} trade${pendingCount === 1 ? "" : "s"} saved locally, waiting to sync`
-              : "Everything is stored locally and only checks the network when you sync"}
-          </p>
+        <div className="flex items-center gap-3">
+          {pendingCount > 0 && (
+            <p className="text-xs text-text-muted">
+              {pendingCount} trade{pendingCount === 1 ? "" : "s"} pending
+            </p>
+          )}
+          <button
+            onClick={handleSyncNow}
+            disabled={syncing}
+            className="flex items-center gap-1.5 text-xs flex-shrink-0"
+          >
+            <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Syncing..." : "Sync now"}
+          </button>
         </div>
-        <button
-          onClick={handleSyncNow}
-          disabled={syncing}
-          className="flex items-center gap-2 text-xs flex-shrink-0"
-        >
-          <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
-          {syncing ? "Syncing..." : "Sync now"}
-        </button>
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm text-text-secondary">Your accounts</p>
-          <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />
-        </div>
+        <p className="text-sm text-text-secondary mb-3">Your accounts</p>
         {accountsLoading && accounts.length === 0 ? (
           <AccountListSkeleton />
         ) : (

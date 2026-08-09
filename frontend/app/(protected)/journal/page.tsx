@@ -8,7 +8,6 @@ import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { DateZoomPicker } from "@/components/DateZoomPicker";
 import { JournalSkeleton } from "@/components/skeletons/JournalSkeleton";
-import { SyncBadge } from "@/components/SyncBadge";
 import { useCachedFetch } from "@/lib/useCachedFetch";
 import { clearCache } from "@/lib/dataCache";
 import { emotionMeta } from "@/lib/emotions";
@@ -51,7 +50,7 @@ export default function JournalPage() {
     preset === "custom" && customRange ? `${customRange.from}_${customRange.to}` : preset;
   const cacheKey = canQuery ? `trades:${selectedAccountId}:${rangeKey}:${sort}:${page}` : null;
 
-  const { data, status, cachedAt, refetch } = useCachedFetch<Trade[]>(
+  const { data, status, refetch } = useCachedFetch<Trade[]>(
     cacheKey,
     async () => {
       const range = preset === "custom" ? customRange! : presetRange(preset);
@@ -103,13 +102,7 @@ export default function JournalPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-xl font-medium tracking-tight">Journal</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-text-muted">Every trade, logged and reviewed</p>
-            <SyncBadge status={status} cachedAt={cachedAt} />
-          </div>
-        </div>
+        <p className="text-xl font-medium tracking-tight">Journal</p>
         <div className="flex gap-2">
           <button onClick={() => handleExport("csv")} className="text-xs flex items-center gap-1.5">
             <Download size={13} /> CSV
@@ -177,7 +170,7 @@ export default function JournalPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {trades.map((trade) => (
             <Link key={trade.id} href={`/journal/trade?id=${trade.id}`}>
               <div className="bg-surface border border-border rounded-2xl p-4 hover:border-accent/50 hover:bg-surface-2 transition-colors h-full">

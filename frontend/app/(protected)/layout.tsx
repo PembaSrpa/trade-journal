@@ -32,19 +32,24 @@ function NavLink({
   icon: Icon,
   active,
   vertical = true,
+  collapsed = false,
 }: {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
   active: boolean;
   vertical?: boolean;
+  collapsed?: boolean;
 }) {
+  const showLabel = !vertical || !collapsed;
   return (
-    <Link href={href} className="relative block">
+    <Link href={href} className="relative block" title={vertical && collapsed ? label : undefined}>
       <div
         className={
           vertical
-            ? `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-colors ${
+            ? `flex items-center gap-3 rounded-xl text-sm transition-colors ${
+                collapsed ? "justify-center px-0 py-2.5" : "px-3.5 py-2.5"
+              } ${
                 active
                   ? "text-white bg-accent-dim"
                   : "text-text-secondary hover:text-text hover:bg-white/5"
@@ -55,7 +60,7 @@ function NavLink({
         }
       >
         <Icon size={vertical ? 18 : 20} strokeWidth={2} />
-        <span className={vertical ? "font-medium" : ""}>{label}</span>
+        {showLabel && <span className={vertical ? "font-medium" : ""}>{label}</span>}
       </div>
       {active && vertical && (
         <motion.div
@@ -101,11 +106,24 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { triggerSync, accountsStatus, accountsCachedAt } = useAccountContext();
   const username = useUsername();
   const [syncing, setSyncing] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     const stop = startSyncListener();
     return stop;
   }, []);
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("sidebar-collapsed") === "1");
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", next ? "1" : "0");
+      return next;
+    });
+  }
 
   // Client-side auth guard. The Next.js middleware only runs when this app
   // is served by the Next.js server (the website); the Android build loads
@@ -139,13 +157,23 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="hidden md:flex md:flex-col w-60 flex-shrink-0 border-r border-border bg-[#141414] px-4 py-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-2 px-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-accent-dim flex items-center justify-center">
+      <aside
+        className={`hidden md:flex md:flex-col flex-shrink-0 border-r border-border bg-[#141414] py-6 sticky top-0 h-screen transition-[width] duration-150 ${
+          collapsed ? "w-[68px] px-3" : "w-60 px-4"
+        }`}
+      >
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={`flex items-center gap-2 mb-8 rounded-lg py-1.5 bg-transparent border-none hover:bg-white/5 transition-colors ${
+            collapsed ? "justify-center px-0" : "px-2"
+          }`}
+        >
+          <div className="w-8 h-8 rounded-lg bg-accent-dim flex items-center justify-center flex-shrink-0">
             <TrendingUp size={17} className="text-accent-glow" />
           </div>
-          <span className="font-medium tracking-tight">Journal</span>
-        </div>
+          {!collapsed && <span className="font-medium tracking-tight">Journal</span>}
+        </button>
 
         <nav className="space-y-1 flex-1">
           {NAV_ITEMS.map((item) => (
@@ -155,36 +183,55 @@ function Shell({ children }: { children: React.ReactNode }) {
               label={item.label}
               icon={item.icon}
               active={pathname.startsWith(item.href)}
+              collapsed={collapsed}
             />
           ))}
         </nav>
 
-        <div className="space-y-3 px-2">
-          <AccountSwitcher />
+        <div className={`space-y-3 ${collapsed ? "px-0" : "px-2"}`}>
+          {!collapsed && <AccountSwitcher />}
 
-          <div className="flex items-center gap-2.5 pt-3 border-t border-border">
-            <UserAvatar username={username} />
-            <div className="min-w-0 flex-1">
-              {username ? (
-                <p className="text-sm font-medium truncate">{username}</p>
-              ) : (
-                <div className="h-4 w-20 rounded bg-surface-2 animate-pulse mb-1" />
-              )}
-              <p className="text-xs text-text-muted">Signed in</p>
-            </div>
+          <div
+            className={`flex items-center gap-2.5 pt-3 border-t border-border ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <UserAvatar username={username} size={collapsed ? 28 : 32} />
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                {username ? (
+                  <p className="text-sm font-medium truncate">{username}</p>
+                ) : (
+                  <div className="h-4 w-20 rounded bg-surface-2 animate-pulse mb-1" />
+                )}
+                <p className="text-xs text-text-muted">Signed in</p>
+              </div>
+            )}
+          </div>
+
+          <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : "justify-between"}`}>
+            <button
+              onClick={triggerSync}
+              title="Sync now"
+              className={`flex items-center gap-1.5 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-text ${
+                collapsed ? "justify-center" : ""
+              }`}
+            >
+              <RefreshCw size={14} />
+              {!collapsed && "Sync"}
+            </button>
+            {!collapsed && <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />}
           </div>
 
           <button
-            onClick={triggerSync}
-            className="w-full flex items-center gap-2 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-text"
-          >
-            <RefreshCw size={14} /> Sync
-          </button>
-          <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-danger"
+            title="Sign out"
+            className={`w-full flex items-center gap-2 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-danger ${
+              collapsed ? "justify-center" : ""
+            }`}
           >
-            <LogOut size={14} /> Sign out
+            <LogOut size={14} />
+            {!collapsed && "Sign out"}
           </button>
         </div>
       </aside>

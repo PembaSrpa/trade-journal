@@ -23,7 +23,6 @@ import { clearCache } from "@/lib/dataCache";
 import { EquityCurve } from "@/components/EquityCurve";
 import { NewsFeed } from "@/components/NewsFeed";
 import { PnlCalendar } from "@/components/PnlCalendar";
-import { SyncBadge } from "@/components/SyncBadge";
 import { OverviewSkeleton } from "@/components/skeletons/OverviewSkeleton";
 import { emotionMeta, emotionToneClass } from "@/lib/emotions";
 import type { Stats } from "@/lib/types";
@@ -34,7 +33,7 @@ export default function OverviewPage() {
   const cacheKey = selectedAccountId ? `stats:${selectedAccountId}` : null;
   const previousSyncNonce = useRef(syncNonce);
 
-  const { data: stats, status, cachedAt, refetch } = useCachedFetch<Stats>(
+  const { data: stats, refetch } = useCachedFetch<Stats>(
     cacheKey,
     async () => {
       const query = isCombinedSelection(selectedAccountId!)
@@ -67,12 +66,8 @@ export default function OverviewPage() {
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xl font-medium tracking-tight">Overview</p>
-          <p className="text-xs text-text-muted mt-0.5">Your performance, at a glance</p>
-        </div>
-        <SyncBadge status={status} cachedAt={cachedAt} />
+      <div className="mb-6">
+        <p className="text-xl font-medium tracking-tight">Overview</p>
       </div>
 
       {!stats ? (
