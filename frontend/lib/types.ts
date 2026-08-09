@@ -121,6 +121,7 @@ export interface Stats {
   win_rate: number;
   avg_r_multiple: number;
   net_pnl: number;
+  current_balance: number;
   avg_hold_minutes: number;
   max_drawdown: number;
   open_trades: number;

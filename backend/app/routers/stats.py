@@ -80,6 +80,8 @@ def compute_stats(db, accounts: list[dict], from_date: str | None, to_date: str 
         drawdown = (peak - equity) / peak * 100 if peak > 0 else 0
         max_drawdown = max(max_drawdown, drawdown)
 
+    current_balance = round(equity, 2)
+
     wins = 0
     r_multiples = []
     hold_minutes_list = []
@@ -122,6 +124,7 @@ def compute_stats(db, accounts: list[dict], from_date: str | None, to_date: str 
         win_rate=win_rate,
         avg_r_multiple=avg_r,
         net_pnl=round(net_pnl, 2),
+        current_balance=current_balance,
         avg_hold_minutes=avg_hold,
         max_drawdown=round(max_drawdown, 2),
         open_trades=open_count,

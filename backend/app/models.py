@@ -192,6 +192,7 @@ class StatsOut(BaseModel):
     win_rate: float
     avg_r_multiple: float
     net_pnl: float
+    current_balance: float
     avg_hold_minutes: int
     max_drawdown: float
     open_trades: int

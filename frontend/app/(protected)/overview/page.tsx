@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   TrendingUp, Target, Percent, Clock, TrendingDown, CircleDot,
   Flame, LineChart, CalendarDays, ListChecks, Newspaper, Brain,
-  Activity, AlertTriangle,
+  Activity, AlertTriangle, Wallet,
 } from "lucide-react";
 import {
   LineChart as ReLineChart,
@@ -93,16 +93,16 @@ export default function OverviewPage() {
           </div>
 
           {/* ── Secondary stats ──────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <StatCard icon={Wallet} label="Current balance"
+              value={`$${stats.current_balance.toLocaleString()}`} />
             <StatCard icon={TrendingUp} label="Expectancy"
               value={`${stats.expectancy >= 0 ? "+" : ""}$${stats.expectancy}`}
               tone={stats.expectancy >= 0 ? "success" : "danger"} />
             <StatCard icon={Target} label="Profit factor" value={stats.profit_factor.toString()} />
-            <StatCard icon={TrendingUp} label="Avg win" value={`+$${stats.avg_win}`} tone="success" />
-            <StatCard icon={TrendingDown} label="Avg loss" value={`-$${stats.avg_loss}`} tone="danger" />
           </div>
 
-          {/* ── Streaks + Day extremes ──────────────────────────────── */}
+          {/* ── Streaks + Avg win/loss ──────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <div className="bg-surface border border-border rounded-2xl p-5">
               <SectionHeader icon={Flame} title="Streaks" />
@@ -124,6 +124,13 @@ export default function OverviewPage() {
               </div>
             </div>
 
+            <StatCard icon={TrendingUp} label="Avg win" value={`+$${stats.avg_win}`} tone="success" />
+            <StatCard icon={TrendingDown} label="Avg loss" value={`-$${stats.avg_loss}`} tone="danger" />
+          </div>
+
+          {/* ── Day extremes ────────────────────────────────────────── */}
+          {(stats.best_day || stats.worst_day) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {stats.best_day && (
               <div className="bg-surface border border-border rounded-2xl p-5">
                 <p className="text-xs text-text-secondary mb-2">Best day</p>
@@ -139,6 +146,7 @@ export default function OverviewPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* ── Setup breakdown ─────────────────────────────────────── */}
           {stats.setup_breakdown.length > 0 && (
