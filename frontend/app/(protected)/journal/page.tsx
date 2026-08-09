@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Download, FileText, Plus } from "lucide-react";
 import { apiDownload, apiGet } from "@/lib/api";
@@ -8,6 +8,9 @@ import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { DateZoomPicker } from "@/components/DateZoomPicker";
 import { JournalSkeleton } from "@/components/skeletons/JournalSkeleton";
+import { SyncBadge } from "@/components/SyncBadge";
+import { useCachedFetch } from "@/lib/useCachedFetch";
+import { clearCache } from "@/lib/dataCache";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
 
@@ -34,32 +37,47 @@ function presetRange(preset: Preset): { from?: string; to?: string } {
 
 export default function JournalPage() {
   const { selectedAccountId, syncNonce } = useAccountContext();
-  const [trades, setTrades] = useState<Trade[]>([]);
   const [preset, setPreset] = useState<Preset>("today");
   const [customRange, setCustomRange] = useState<{ from: string; to: string; label: string } | null>(null);
   const [sort, setSort] = useState<"desc" | "asc">("desc");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
 
+  const canQuery =
+    !!selectedAccountId &&
+    !isCombinedSelection(selectedAccountId) &&
+    (preset !== "custom" || !!customRange);
+
+  const rangeKey =
+    preset === "custom" && customRange ? `${customRange.from}_${customRange.to}` : preset;
+  const cacheKey = canQuery ? `trades:${selectedAccountId}:${rangeKey}:${sort}:${page}` : null;
+
+  const { data, status, cachedAt, refetch } = useCachedFetch<Trade[]>(
+    cacheKey,
+    async () => {
+      const range = preset === "custom" ? customRange! : presetRange(preset);
+      const params = new URLSearchParams({
+        account_id: selectedAccountId!,
+        sort,
+        page: String(page),
+        page_size: "10",
+      });
+      if (range.from) params.set("from", range.from);
+      if (range.to) params.set("to", range.to);
+      return apiGet<Trade[]>(`/trades?${params.toString()}`);
+    },
+    [selectedAccountId, preset, customRange, sort, page]
+  );
+
+  const trades = data ?? [];
+  const loading = status === "initial";
+
+  const previousSyncNonce = useRef(syncNonce);
   useEffect(() => {
-    if (!selectedAccountId || isCombinedSelection(selectedAccountId)) return;
-    if (preset === "custom" && !customRange) return;
-
-    setLoading(true);
-    const range = preset === "custom" ? customRange! : presetRange(preset);
-    const params = new URLSearchParams({
-      account_id: selectedAccountId,
-      sort,
-      page: String(page),
-      page_size: "10",
-    });
-    if (range.from) params.set("from", range.from);
-    if (range.to) params.set("to", range.to);
-
-    apiGet<Trade[]>(`/trades?${params.toString()}`)
-      .then(setTrades)
-      .finally(() => setLoading(false));
-  }, [selectedAccountId, preset, customRange, sort, page, syncNonce]);
+    if (syncNonce === previousSyncNonce.current) return;
+    previousSyncNonce.current = syncNonce;
+    if (!cacheKey) return;
+    clearCache(cacheKey).then(refetch);
+  }, [syncNonce, cacheKey, refetch]);
 
   if (!selectedAccountId) {
     return <p className="text-text-secondary text-sm">Select or create an account first.</p>;
@@ -87,7 +105,10 @@ export default function JournalPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xl font-medium tracking-tight">Journal</p>
-          <p className="text-xs text-text-muted mt-0.5">Every trade, logged and reviewed</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-text-muted">Every trade, logged and reviewed</p>
+            <SyncBadge status={status} cachedAt={cachedAt} />
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={() => handleExport("csv")} className="text-xs flex items-center gap-1.5">
@@ -158,7 +179,7 @@ export default function JournalPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 mb-6">
           {trades.map((trade) => (
-            <Link key={trade.id} href={`/journal/${trade.id}`}>
+            <Link key={trade.id} href={`/journal/trade?id=${trade.id}`}>
               <div className="bg-surface border border-border rounded-2xl p-4 hover:border-accent/50 hover:bg-surface-2 transition-colors h-full">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2 min-w-0">

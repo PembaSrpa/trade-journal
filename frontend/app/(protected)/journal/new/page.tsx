@@ -6,11 +6,12 @@ import { ArrowLeft } from "lucide-react";
 import { submitTradeWithOfflineFallback } from "@/lib/offlineSync";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
+import { clearCacheByPrefix } from "@/lib/dataCache";
 import { TradeForm } from "@/components/TradeForm";
 
 export default function NewTradePage() {
   const router = useRouter();
-  const { selectedAccountId } = useAccountContext();
+  const { selectedAccountId, triggerSync } = useAccountContext();
 
   if (!selectedAccountId || isCombinedSelection(selectedAccountId)) {
     return (
@@ -25,6 +26,11 @@ export default function NewTradePage() {
     if (!result.synced) {
       alert("No connection — trade saved locally and will sync automatically once you're back online.");
     }
+    // Wipe cached journal lists and stats so the next view picks up the new
+    // entry right away instead of showing a stale list until a manual sync.
+    await clearCacheByPrefix("trades:");
+    await clearCacheByPrefix("stats:");
+    triggerSync();
     router.push("/journal");
   }
 

@@ -17,6 +17,7 @@ import { AccountProvider, useAccountContext } from "@/lib/AccountContext";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { createClient } from "@/lib/supabase/client";
 import { startSyncListener } from "@/lib/offlineSync";
+import { SyncBadge } from "@/components/SyncBadge";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
@@ -97,13 +98,37 @@ function UserAvatar({ username, size = 32 }: { username: string | null; size?: n
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { triggerSync } = useAccountContext();
+  const { triggerSync, accountsStatus, accountsCachedAt } = useAccountContext();
   const username = useUsername();
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const stop = startSyncListener();
     return stop;
   }, []);
+
+  // Client-side auth guard. The Next.js middleware only runs when this app
+  // is served by the Next.js server (the website); the Android build loads
+  // a locally-bundled copy with no middleware, so this check is what keeps
+  // /overview, /journal, /notebook, /settings etc. protected there.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace("/login");
+      }
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/login");
+    });
+    return () => listener.subscription.unsubscribe();
+  }, [router]);
+
+  function handleSyncClick() {
+    setSyncing(true);
+    triggerSync();
+    setTimeout(() => setSyncing(false), 800);
+  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -171,7 +196,14 @@ function Shell({ children }: { children: React.ReactNode }) {
               <TrendingUp size={16} className="text-accent-glow flex-shrink-0" />
               <span className="font-medium text-sm truncate">Journal</span>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={handleSyncClick}
+                aria-label="Sync now"
+                className="!w-8 !h-8 !p-0 flex items-center justify-center text-text-secondary hover:text-text"
+              >
+                <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
+              </button>
               <UserAvatar username={username} size={28} />
               <button
                 onClick={handleSignOut}
@@ -182,8 +214,9 @@ function Shell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           </div>
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-3 flex items-center justify-between gap-2">
             <AccountSwitcher />
+            <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />
           </div>
         </div>
 

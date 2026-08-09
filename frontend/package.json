@@ -5,7 +5,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:capacitor": "node scripts/build-capacitor.mjs",
+    "cap:sync": "npx cap sync android",
+    "android:build": "npm run build:capacitor && npm run cap:sync"
   },
   "dependencies": {
     "next": "15.5.22",

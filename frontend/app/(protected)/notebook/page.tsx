@@ -14,6 +14,9 @@ import {
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
+import { readCache, writeCache } from "@/lib/dataCache";
+import type { SyncStatus } from "@/lib/useCachedFetch";
+import { SyncBadge } from "@/components/SyncBadge";
 import { NotebookEntriesSkeleton } from "@/components/skeletons/NotebookSkeleton";
 import type { NotebookEntry } from "@/lib/types";
 
@@ -49,6 +52,8 @@ export default function NotebookPage() {
   const [entries, setEntries] = useState<NotebookEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<SyncStatus>("initial");
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [query, setQuery] = useState("");
@@ -58,10 +63,37 @@ export default function NotebookPage() {
 
   useEffect(() => {
     if (!selectedAccountId || isCombinedSelection(selectedAccountId)) return;
+    const cacheKey = `notebook:${selectedAccountId}`;
+    let cancelled = false;
+
     setLoading(true);
+    readCache<NotebookEntry[]>(cacheKey).then((cached) => {
+      if (cancelled || !cached) return;
+      setEntries(cached.data);
+      setCachedAt(cached.cachedAt);
+      setStatus("revalidating");
+      setLoading(false);
+    });
+
     apiGet<NotebookEntry[]>(`/notebook?account_id=${selectedAccountId}`)
-      .then(setEntries)
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (cancelled) return;
+        setEntries(data);
+        const now = new Date().toISOString();
+        setCachedAt(now);
+        setStatus("live");
+        void writeCache(cacheKey, data);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus((s) => (s === "revalidating" ? "cached" : "error"));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedAccountId, syncNonce]);
 
   useEffect(() => {
@@ -102,7 +134,9 @@ export default function NotebookPage() {
     });
     setEntries((prev) => {
       const rest = prev.filter((e) => e.entry_date !== saved.entry_date);
-      return [saved, ...rest].sort((a, b) => (a.entry_date < b.entry_date ? 1 : -1));
+      const next = [saved, ...rest].sort((a, b) => (a.entry_date < b.entry_date ? 1 : -1));
+      void writeCache(`notebook:${selectedAccountId}`, next);
+      return next;
     });
     skipNextSyncRef.current = true;
     setContent(saved.content);
@@ -127,7 +161,11 @@ export default function NotebookPage() {
   async function handleDelete(entry: NotebookEntry) {
     if (!confirm(`Delete the notebook entry for ${entry.entry_date}? This can't be undone.`)) return;
     await apiDelete(`/notebook/${entry.id}`);
-    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    setEntries((prev) => {
+      const next = prev.filter((e) => e.id !== entry.id);
+      void writeCache(`notebook:${selectedAccountId}`, next);
+      return next;
+    });
     if (entry.entry_date === selectedDate) {
       skipNextSyncRef.current = true;
       setContent("");
@@ -141,9 +179,12 @@ export default function NotebookPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xl font-medium tracking-tight">Notebook</p>
-          <p className="text-xs text-text-muted mt-0.5">
-            Pre-market bias, session reviews, anything not tied to one trade
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-text-muted">
+              Pre-market bias, session reviews, anything not tied to one trade
+            </p>
+            <SyncBadge status={status} cachedAt={cachedAt} />
+          </div>
         </div>
         {entries.length > 0 && (
           <p className="text-xs text-text-muted">{entries.length} entr{entries.length === 1 ? "y" : "ies"}</p>
@@ -261,7 +302,7 @@ export default function NotebookPage() {
             )}
           </div>
 
-          {loading ? (
+          {loading && entries.length === 0 && status === "initial" ? (
             <NotebookEntriesSkeleton />
           ) : entries.length === 0 ? (
             <div className="bg-surface border border-border rounded-2xl p-10 text-center">

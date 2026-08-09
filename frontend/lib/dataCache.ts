@@ -33,3 +33,19 @@ export async function clearCache(key: string): Promise<void> {
     return;
   }
 }
+
+/**
+ * Removes every cache entry whose key starts with the given prefix, e.g.
+ * clearCacheByPrefix("trades:") wipes all cached journal list pages/filters
+ * at once so the next read is forced to revalidate.
+ */
+export async function clearCacheByPrefix(prefix: string): Promise<void> {
+  try {
+    const { keys } = await Preferences.keys();
+    const fullPrefix = CACHE_PREFIX + prefix;
+    const matches = keys.filter((k) => k.startsWith(fullPrefix));
+    await Promise.all(matches.map((k) => Preferences.remove({ key: k })));
+  } catch {
+    return;
+  }
+}

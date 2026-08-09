@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Archive, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Archive, RefreshCw, Trash2 } from "lucide-react";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
+import { getPendingCount, flushQueue } from "@/lib/offlineSync";
 import { PlaybookManager } from "@/components/PlaybookManager";
 import { AccountListSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { SyncBadge } from "@/components/SyncBadge";
@@ -18,6 +19,7 @@ export default function SettingsPage() {
     loading: accountsLoading,
     accountsStatus,
     accountsCachedAt,
+    triggerSync,
   } = useAccountContext();
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("demo");
@@ -26,6 +28,21 @@ export default function SettingsPage() {
   const [brokerName, setBrokerName] = useState("");
   const [leverage, setLeverage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    getPendingCount().then(setPendingCount);
+  }, [accountsStatus]);
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    await flushQueue();
+    await refreshAccounts();
+    triggerSync();
+    setPendingCount(await getPendingCount());
+    setSyncing(false);
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +83,25 @@ export default function SettingsPage() {
       <div>
         <p className="text-xl font-medium tracking-tight">Settings</p>
         <p className="text-xs text-text-muted mt-0.5">Accounts, playbooks, and preferences</p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Sync</p>
+          <p className="text-xs text-text-muted mt-0.5">
+            {pendingCount > 0
+              ? `${pendingCount} trade${pendingCount === 1 ? "" : "s"} saved locally, waiting to sync`
+              : "Everything is stored locally and only checks the network when you sync"}
+          </p>
+        </div>
+        <button
+          onClick={handleSyncNow}
+          disabled={syncing}
+          className="flex items-center gap-2 text-xs flex-shrink-0"
+        >
+          <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+          {syncing ? "Syncing..." : "Sync now"}
+        </button>
       </div>
 
       <div>
