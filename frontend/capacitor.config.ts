@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "Trading Journal",
   webDir: "public",
   server: {
-    url: "https://your-app.vercel.app",
+    url: "https://trade-journal-three-umber.vercel.app",
     cleartext: false,
   },
 };
