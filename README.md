@@ -82,7 +82,7 @@ Manage accounts (create, archive, delete) and playbooks for the currently select
 
 ## Mobile app (APK)
 
-The Android app is the same product as the web app — same account, same data, same login. It's a native shell around the web app, so anything you do on your phone shows up instantly on desktop and vice versa. There's no separate mobile-only feature set and nothing to sync manually.
+The Android app is the same product as the web app — same account, same data, same login. Trades logged while offline are saved on your phone and pushed automatically once you're back online, or you can tap **Sync** any time to push and pull the latest data manually. Anything you log shows up on desktop and vice versa.
 
 ## Data & exports
 
