@@ -20,7 +20,14 @@ const STORAGE_KEY = "journal_selected_account_id";
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  // Read the last-selected account synchronously so dependent pages (Overview's
+  // /stats fetch, etc.) don't have to wait for /accounts to resolve before they
+  // can even start their own request — /accounts and /stats now run in parallel
+  // instead of one blocking the other. refreshAccounts() below still validates
+  // and corrects this if the stored id turns out to be stale/deleted.
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
+  );
   const [loading, setLoading] = useState(true);
   const [syncNonce, setSyncNonce] = useState(0);
 

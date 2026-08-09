@@ -280,17 +280,20 @@ export default function OverviewPage() {
             </div>
           )}
 
-          {/* ── Market news ──────────────────────────────────────────── */}
-          <div className="mb-6">
-            <SectionHeader icon={Newspaper} title="Market news" />
-            <div className="bg-surface border border-border rounded-2xl p-4">
-              <NewsFeed />
-            </div>
-          </div>
-
           <p className="text-xs text-text-muted">{stats.closed_trades} closed trades in this account</p>
         </>
       )}
+
+      {/* ── Market news ──────────────────────────────────────────────
+          Rendered unconditionally (not gated behind stats loading) so its
+          own fetch starts immediately in parallel with /stats, instead of
+          waiting for stats to finish first for no real reason. */}
+      <div className="mb-6 mt-6">
+        <SectionHeader icon={Newspaper} title="Market news" />
+        <div className="bg-surface border border-border rounded-2xl p-4">
+          <NewsFeed />
+        </div>
+      </div>
     </div>
   );
 }
