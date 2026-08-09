@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
+import { readCache, writeCache } from "@/lib/dataCache";
+import type { SyncStatus } from "@/lib/useCachedFetch";
 import type { Account } from "@/lib/types";
 
 interface AccountContextValue {
@@ -12,31 +14,30 @@ interface AccountContextValue {
   loading: boolean;
   syncNonce: number;
   triggerSync: () => void;
+  accountsStatus: SyncStatus;
+  accountsCachedAt: string | null;
 }
 
 const AccountContext = createContext<AccountContextValue | null>(null);
 
 const STORAGE_KEY = "journal_selected_account_id";
+const ACCOUNTS_CACHE_KEY = "accounts:list";
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  // Read the last-selected account synchronously so dependent pages (Overview's
-  // /stats fetch, etc.) don't have to wait for /accounts to resolve before they
-  // can even start their own request — /accounts and /stats now run in parallel
-  // instead of one blocking the other. refreshAccounts() below still validates
-  // and corrects this if the stored id turns out to be stale/deleted.
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
   );
   const [loading, setLoading] = useState(true);
   const [syncNonce, setSyncNonce] = useState(0);
+  const [accountsStatus, setAccountsStatus] = useState<SyncStatus>("initial");
+  const [accountsCachedAt, setAccountsCachedAt] = useState<string | null>(null);
 
   function triggerSync() {
     setSyncNonce((n) => n + 1);
   }
 
-  async function refreshAccounts() {
-    const data = await apiGet<Account[]>("/accounts");
+  async function applyAccounts(data: Account[]) {
     setAccounts(data);
 
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -50,6 +51,26 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEY, data[0].id);
     } else {
       setSelectedAccountId(null);
+    }
+  }
+
+  async function refreshAccounts() {
+    const cached = await readCache<Account[]>(ACCOUNTS_CACHE_KEY);
+    if (cached) {
+      await applyAccounts(cached.data);
+      setAccountsCachedAt(cached.cachedAt);
+      setAccountsStatus("revalidating");
+    }
+
+    try {
+      const data = await apiGet<Account[]>("/accounts");
+      await applyAccounts(data);
+      const now = new Date().toISOString();
+      setAccountsCachedAt(now);
+      setAccountsStatus("live");
+      void writeCache(ACCOUNTS_CACHE_KEY, data);
+    } catch {
+      setAccountsStatus(cached ? "cached" : "error");
     }
   }
 
@@ -72,6 +93,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         loading,
         syncNonce,
         triggerSync,
+        accountsStatus,
+        accountsCachedAt,
       }}
     >
       {children}

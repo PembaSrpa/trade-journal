@@ -5,7 +5,9 @@ import { useAccountContext } from "@/lib/AccountContext";
 export function AccountSwitcher() {
   const { accounts, selectedAccountId, selectAccount, loading } = useAccountContext();
 
-  if (loading) return null;
+  if (loading && accounts.length === 0) {
+    return <div className="w-full h-9 rounded-lg bg-surface-2 animate-pulse" />;
+  }
 
   if (accounts.length === 0) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   TrendingUp, Target, Percent, Clock, TrendingDown, CircleDot,
   Flame, LineChart, CalendarDays, ListChecks, Newspaper, Brain,
@@ -18,31 +18,43 @@ import {
 import { apiGet } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { combinedAccountType, isCombinedSelection } from "@/lib/accountSelection";
+import { useCachedFetch } from "@/lib/useCachedFetch";
+import { clearCache } from "@/lib/dataCache";
 import { EquityCurve } from "@/components/EquityCurve";
 import { NewsFeed } from "@/components/NewsFeed";
 import { PnlCalendar } from "@/components/PnlCalendar";
+import { SyncBadge } from "@/components/SyncBadge";
+import { OverviewSkeleton } from "@/components/skeletons/OverviewSkeleton";
 import { emotionMeta, emotionToneClass } from "@/lib/emotions";
 import type { Stats } from "@/lib/types";
 
 export default function OverviewPage() {
   const { selectedAccountId, accounts, loading: accountsLoading, syncNonce } = useAccountContext();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const cacheKey = selectedAccountId ? `stats:${selectedAccountId}` : null;
+  const previousSyncNonce = useRef(syncNonce);
+
+  const { data: stats, status, cachedAt, refetch } = useCachedFetch<Stats>(
+    cacheKey,
+    async () => {
+      const query = isCombinedSelection(selectedAccountId!)
+        ? `account_type=${combinedAccountType(selectedAccountId!)}`
+        : `account_id=${selectedAccountId}`;
+      return apiGet<Stats>(`/stats?${query}`);
+    },
+    [selectedAccountId]
+  );
 
   useEffect(() => {
-    if (!selectedAccountId) return;
-    setLoading(true);
-    const query = isCombinedSelection(selectedAccountId)
-      ? `account_type=${combinedAccountType(selectedAccountId)}`
-      : `account_id=${selectedAccountId}`;
-    apiGet<Stats>(`/stats?${query}`)
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, [selectedAccountId, syncNonce]);
+    if (syncNonce === previousSyncNonce.current) return;
+    previousSyncNonce.current = syncNonce;
+    if (!cacheKey) return;
+    clearCache(cacheKey).then(refetch);
+  }, [syncNonce, cacheKey, refetch]);
 
-  if (accountsLoading) return null;
+  if (accountsLoading && !selectedAccountId) return <OverviewSkeleton />;
 
-  if (accounts.length === 0) {
+  if (!accountsLoading && accounts.length === 0) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-10 text-center max-w-md mx-auto mt-12">
         <p className="text-text-secondary mb-3">No accounts yet.</p>
@@ -51,18 +63,22 @@ export default function OverviewPage() {
     );
   }
 
+  if (!selectedAccountId) return <OverviewSkeleton />;
+
   return (
     <div className="w-full">
-      <div className="mb-6">
-        <p className="text-xl font-medium tracking-tight">Overview</p>
-        <p className="text-xs text-text-muted mt-0.5">Your performance, at a glance</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xl font-medium tracking-tight">Overview</p>
+          <p className="text-xs text-text-muted mt-0.5">Your performance, at a glance</p>
+        </div>
+        <SyncBadge status={status} cachedAt={cachedAt} />
       </div>
 
-      {loading || !stats ? (
-        <p className="text-text-secondary text-sm">Loading stats...</p>
+      {!stats ? (
+        <OverviewSkeleton />
       ) : (
         <>
-          {/* ── Top stat strip ─────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <StatCard icon={Percent} label="Win rate" value={`${stats.win_rate}%`} />
             <StatCard icon={TrendingUp} label="Net P/L"
@@ -74,7 +90,6 @@ export default function OverviewPage() {
             <StatCard icon={CircleDot} label="Open trades" value={stats.open_trades.toString()} />
           </div>
 
-          {/* ── Equity curve + Calendar ─────────────────────────────── */}
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mb-6 items-start">
             <div className="xl:col-span-3">
               <SectionHeader icon={LineChart} title="Equity curve" />
@@ -92,7 +107,6 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          {/* ── Secondary stats ──────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <StatCard icon={Wallet} label="Current balance"
               value={`$${stats.current_balance.toLocaleString()}`} />
@@ -102,7 +116,6 @@ export default function OverviewPage() {
             <StatCard icon={Target} label="Profit factor" value={stats.profit_factor.toString()} />
           </div>
 
-          {/* ── Streaks + Avg win/loss ──────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <div className="bg-surface border border-border rounded-2xl p-5">
               <SectionHeader icon={Flame} title="Streaks" />
@@ -128,7 +141,6 @@ export default function OverviewPage() {
             <StatCard icon={TrendingDown} label="Avg loss" value={`-$${stats.avg_loss}`} tone="danger" />
           </div>
 
-          {/* ── Day extremes ────────────────────────────────────────── */}
           {(stats.best_day || stats.worst_day) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {stats.best_day && (
@@ -148,7 +160,6 @@ export default function OverviewPage() {
           </div>
           )}
 
-          {/* ── Setup breakdown ─────────────────────────────────────── */}
           {stats.setup_breakdown.length > 0 && (
             <div className="mb-6">
               <SectionHeader icon={ListChecks} title="By setup" />
@@ -168,7 +179,6 @@ export default function OverviewPage() {
             </div>
           )}
 
-          {/* ── Psychology ──────────────────────────────────────────── */}
           {(stats.emotion_breakdown.length > 0 || stats.session_breakdown.length > 0 || stats.revenge_trade_count > 0) && (
             <div className="mb-6">
               <SectionHeader icon={Brain} title="Psychology" />
@@ -183,7 +193,6 @@ export default function OverviewPage() {
               )}
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                {/* Emotion breakdown */}
                 {stats.emotion_breakdown.length > 0 && (
                   <div className="bg-surface border border-border rounded-2xl p-5">
                     <p className="text-sm text-text-secondary mb-4">Win rate by emotional state</p>
@@ -224,7 +233,6 @@ export default function OverviewPage() {
                   </div>
                 )}
 
-                {/* Session breakdown */}
                 {stats.session_breakdown.length > 0 && (
                   <div className="bg-surface border border-border rounded-2xl p-5">
                     <p className="text-sm text-text-secondary mb-4">Win rate by session</p>
@@ -259,7 +267,6 @@ export default function OverviewPage() {
             </div>
           )}
 
-          {/* ── Rule adherence trend ─────────────────────────────────── */}
           {stats.rule_adherence_trend.length > 1 && (
             <div className="mb-6">
               <SectionHeader icon={Activity} title="Rule adherence trend" />
@@ -284,10 +291,6 @@ export default function OverviewPage() {
         </>
       )}
 
-      {/* ── Market news ──────────────────────────────────────────────
-          Rendered unconditionally (not gated behind stats loading) so its
-          own fetch starts immediately in parallel with /stats, instead of
-          waiting for stats to finish first for no real reason. */}
       <div className="mb-6 mt-6">
         <SectionHeader icon={Newspaper} title="Market news" />
         <div className="bg-surface border border-border rounded-2xl p-4">

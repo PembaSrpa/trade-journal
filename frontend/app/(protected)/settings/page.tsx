@@ -6,10 +6,19 @@ import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { PlaybookManager } from "@/components/PlaybookManager";
+import { AccountListSkeleton } from "@/components/skeletons/SettingsSkeleton";
+import { SyncBadge } from "@/components/SyncBadge";
 import type { Account, AccountType } from "@/lib/types";
 
 export default function SettingsPage() {
-  const { accounts, refreshAccounts, selectedAccountId } = useAccountContext();
+  const {
+    accounts,
+    refreshAccounts,
+    selectedAccountId,
+    loading: accountsLoading,
+    accountsStatus,
+    accountsCachedAt,
+  } = useAccountContext();
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("demo");
   const [currency, setCurrency] = useState("USD");
@@ -60,7 +69,13 @@ export default function SettingsPage() {
       </div>
 
       <div>
-        <p className="text-sm text-text-secondary mb-3">Your accounts</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm text-text-secondary">Your accounts</p>
+          <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />
+        </div>
+        {accountsLoading && accounts.length === 0 ? (
+          <AccountListSkeleton />
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {accounts.map((account) => (
             <div
@@ -97,6 +112,7 @@ export default function SettingsPage() {
             <p className="text-text-secondary text-sm">No accounts yet.</p>
           )}
         </div>
+        )}
         <p className="text-xs text-text-muted mt-2">
           Archive hides an account but keeps its history. Delete removes it and every trade in it permanently.
         </p>

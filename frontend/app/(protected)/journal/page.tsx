@@ -7,6 +7,7 @@ import { apiDownload, apiGet } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { DateZoomPicker } from "@/components/DateZoomPicker";
+import { JournalSkeleton } from "@/components/skeletons/JournalSkeleton";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
 
@@ -144,7 +145,7 @@ export default function JournalPage() {
       </div>
 
       {loading ? (
-        <p className="text-text-secondary text-sm">Loading...</p>
+        <JournalSkeleton />
       ) : trades.length === 0 ? (
         <div className="bg-surface border border-border rounded-2xl p-8 text-center">
           <p className="text-text-secondary text-sm mb-1">

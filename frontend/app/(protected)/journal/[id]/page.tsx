@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, Trash2, AlertTriangle, Brain } from "lucide-react";
 import { apiDelete, apiGet } from "@/lib/api";
 import { getSignedScreenshotUrl } from "@/lib/screenshots";
+import { TradeDetailSkeleton } from "@/components/skeletons/TradeDetailSkeleton";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
 
@@ -33,7 +34,7 @@ export default function TradeDetailPage() {
     router.push("/journal");
   }
 
-  if (loading) return <p className="text-text-secondary text-sm">Loading...</p>;
+  if (loading) return <TradeDetailSkeleton />;
   if (!trade) return <p className="text-text-secondary text-sm">Trade not found.</p>;
 
   const emotion = trade.emotional_state ? emotionMeta(trade.emotional_state) : null;

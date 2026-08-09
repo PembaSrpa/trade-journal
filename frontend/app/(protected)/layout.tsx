@@ -140,7 +140,11 @@ function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2.5 pt-3 border-t border-border">
             <UserAvatar username={username} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{username ?? "Loading..."}</p>
+              {username ? (
+                <p className="text-sm font-medium truncate">{username}</p>
+              ) : (
+                <div className="h-4 w-20 rounded bg-surface-2 animate-pulse mb-1" />
+              )}
               <p className="text-xs text-text-muted">Signed in</p>
             </div>
           </div>
