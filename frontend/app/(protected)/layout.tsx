@@ -16,7 +16,7 @@ import {
 import { AccountProvider, useAccountContext } from "@/lib/AccountContext";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { createClient } from "@/lib/supabase/client";
-import { startSyncListener } from "@/lib/offlineSync";
+import { startSyncListener, flushQueue } from "@/lib/offlineSync";
 import { SyncBadge } from "@/components/SyncBadge";
 
 const NAV_ITEMS = [
@@ -103,7 +103,7 @@ function UserAvatar({ username, size = 32 }: { username: string | null; size?: n
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { triggerSync, accountsStatus, accountsCachedAt } = useAccountContext();
+  const { triggerSync, refreshAccounts, accountsStatus, accountsCachedAt } = useAccountContext();
   const username = useUsername();
   const [syncing, setSyncing] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -125,6 +125,14 @@ function Shell({ children }: { children: React.ReactNode }) {
     });
   }
 
+  async function handleSyncClick() {
+    setSyncing(true);
+    await flushQueue();
+    await refreshAccounts();
+    triggerSync();
+    setSyncing(false);
+  }
+
   // Client-side auth guard. The Next.js middleware only runs when this app
   // is served by the Next.js server (the website); the Android build loads
   // a locally-bundled copy with no middleware, so this check is what keeps
@@ -141,12 +149,6 @@ function Shell({ children }: { children: React.ReactNode }) {
     });
     return () => listener.subscription.unsubscribe();
   }, [router]);
-
-  function handleSyncClick() {
-    setSyncing(true);
-    triggerSync();
-    setTimeout(() => setSyncing(false), 800);
-  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -211,14 +213,15 @@ function Shell({ children }: { children: React.ReactNode }) {
 
           <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : "justify-between"}`}>
             <button
-              onClick={triggerSync}
+              onClick={handleSyncClick}
+              disabled={syncing}
               title="Sync now"
               className={`flex items-center gap-1.5 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-text ${
                 collapsed ? "justify-center" : ""
               }`}
             >
-              <RefreshCw size={14} />
-              {!collapsed && "Sync"}
+              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+              {!collapsed && (syncing ? "Syncing..." : "Sync")}
             </button>
             {!collapsed && <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />}
           </div>
@@ -246,6 +249,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 onClick={handleSyncClick}
+                disabled={syncing}
                 aria-label="Sync now"
                 className="!w-8 !h-8 !p-0 flex items-center justify-center text-text-secondary hover:text-text"
               >
