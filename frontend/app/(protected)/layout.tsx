@@ -78,8 +78,8 @@ function useUsername() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? "";
+    supabase.auth.getSession().then(({ data }) => {
+      const email = data.session?.user.email ?? "";
       const name = email.split("@")[0];
       setUsername(name || null);
     });
