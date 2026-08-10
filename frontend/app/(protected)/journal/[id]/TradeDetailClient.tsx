@@ -96,7 +96,7 @@ export default function TradeDetailClient() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Entry price" value={trade.entry_price.toString()} />
             <Field label="Exit price" value={trade.exit_price?.toString() ?? "—"} />
             <Field label="Initial SL" value={trade.initial_sl?.toString() ?? "—"} />

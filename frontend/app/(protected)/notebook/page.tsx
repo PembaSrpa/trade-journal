@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  CalendarDays,
   X,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
@@ -18,6 +17,7 @@ import { readCache, writeCache } from "@/lib/dataCache";
 import type { SyncStatus } from "@/lib/useCachedFetch";
 import { NotebookEntriesSkeleton } from "@/components/skeletons/NotebookSkeleton";
 import type { NotebookEntry } from "@/lib/types";
+import { DateTimePicker } from "@/components/DateTimePicker";
 
 function todayISO(): string {
   const now = new Date();
@@ -215,14 +215,8 @@ export default function NotebookPage() {
             </div>
 
             <div className="flex items-center gap-2 mb-4">
-              <div className="relative flex-1">
-                <CalendarDays size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="!text-xs w-full !pl-8"
-                />
+              <div className="flex-1">
+                <DateTimePicker mode="date" value={selectedDate} onChange={setSelectedDate} />
               </div>
               {!isToday && (
                 <button

@@ -1,12 +1,13 @@
 "use client";
 
 import { useAccountContext } from "@/lib/AccountContext";
+import { Dropdown, type DropdownOption } from "@/components/Dropdown";
 
-export function AccountSwitcher() {
+export function AccountSwitcher({ className }: { className?: string }) {
   const { accounts, selectedAccountId, selectAccount, loading } = useAccountContext();
 
   if (loading && accounts.length === 0) {
-    return <div className="w-full h-9 rounded-lg bg-surface-2 animate-pulse" />;
+    return <div className={`h-9 rounded-lg bg-surface-2 animate-pulse ${className ?? "w-full"}`} />;
   }
 
   if (accounts.length === 0) {
@@ -20,19 +21,19 @@ export function AccountSwitcher() {
   const hasDemo = accounts.some((a) => a.type === "demo");
   const hasLive = accounts.some((a) => a.type === "live");
 
+  const options: DropdownOption<string>[] = [
+    ...accounts.map((account) => ({ value: account.id, label: account.name })),
+    ...(hasDemo ? [{ value: "combined:demo", label: "All demo accounts" }] : []),
+    ...(hasLive ? [{ value: "combined:live", label: "All funded accounts" }] : []),
+  ];
+
   return (
-    <select
+    <Dropdown
       value={selectedAccountId ?? ""}
-      onChange={(e) => selectAccount(e.target.value)}
-      className="w-full text-sm bg-surface-2"
-    >
-      {accounts.map((account) => (
-        <option key={account.id} value={account.id}>
-          {account.name}
-        </option>
-      ))}
-      {hasDemo && <option value="combined:demo">All demo accounts</option>}
-      {hasLive && <option value="combined:live">All funded accounts</option>}
-    </select>
+      onChange={selectAccount}
+      options={options}
+      className={className ?? "w-full"}
+      buttonClassName="!bg-surface-2 !text-sm !py-2 !px-3"
+    />
   );
 }

@@ -266,8 +266,8 @@ function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="px-4 pb-3 flex items-center justify-between gap-2">
-            <AccountSwitcher />
-            <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />
+            <AccountSwitcher className="flex-1 min-w-0" />
+            <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} className="flex-shrink-0 whitespace-nowrap" />
           </div>
         </div>
 

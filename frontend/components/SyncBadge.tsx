@@ -16,7 +16,15 @@ function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: string | null }) {
+export function SyncBadge({
+  status,
+  cachedAt,
+  className,
+}: {
+  status: SyncStatus;
+  cachedAt: string | null;
+  className?: string;
+}) {
   const [, forceTick] = useState(0);
 
   useEffect(() => {
@@ -28,7 +36,7 @@ export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: 
 
   if (status === "revalidating") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
+      <span className={`inline-flex items-center gap-1.5 text-xs text-text-muted ${className ?? ""}`}>
         <RefreshCw size={11} className="animate-spin" />
         Updating
       </span>
@@ -37,7 +45,7 @@ export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: 
 
   if (status === "error" && !cachedAt) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-danger">
+      <span className={`inline-flex items-center gap-1.5 text-xs text-danger ${className ?? ""}`}>
         <WifiOff size={11} />
         Couldn&apos;t load
       </span>
@@ -48,7 +56,7 @@ export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: 
 
   if (status === "error") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-warning">
+      <span className={`inline-flex items-center gap-1.5 text-xs text-warning ${className ?? ""}`}>
         <WifiOff size={11} />
         Offline, showing {relativeTime(cachedAt)}
       </span>
@@ -58,7 +66,7 @@ export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: 
   const seconds = Math.floor((Date.now() - new Date(cachedAt).getTime()) / 1000);
   if (seconds < 15) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-success">
+      <span className={`inline-flex items-center gap-1.5 text-xs text-success ${className ?? ""}`}>
         <CheckCircle2 size={11} />
         Live
       </span>
@@ -66,7 +74,7 @@ export function SyncBadge({ status, cachedAt }: { status: SyncStatus; cachedAt: 
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
+    <span className={`inline-flex items-center gap-1.5 text-xs text-text-muted ${className ?? ""}`}>
       Synced {relativeTime(cachedAt)}
     </span>
   );

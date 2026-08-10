@@ -19,6 +19,7 @@ import type { Direction, EmotionalState, ExitType, LotUnit, Playbook, Trade } fr
 import { EMOTIONAL_STATES, emotionMeta } from "@/lib/emotions";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { InstrumentPicker } from "@/components/InstrumentPicker";
+import { Dropdown } from "@/components/Dropdown";
 import { type AssetClass, USES_LOT_UNIT, PRICE_MOVE_LABEL } from "@/lib/instruments";
 
 interface TradeFormProps {
@@ -269,16 +270,14 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
       <SectionCard icon={Brain} title="Psychology" subtitle="How you felt going into this trade">
         <div className="mb-4">
           <label className="block text-xs text-text-secondary mb-1">Emotional state</label>
-          <select
+          <Dropdown
             value={emotionalState}
-            onChange={(e) => setEmotionalState(e.target.value as EmotionalState | "")}
-            className="w-full"
-          >
-            <option value="">Not set</option>
-            {EMOTIONAL_STATES.map((state) => (
-              <option key={state} value={state}>{emotionMeta(state).label}</option>
-            ))}
-          </select>
+            onChange={(v) => setEmotionalState(v as EmotionalState | "")}
+            options={[
+              { value: "", label: "Not set" },
+              ...EMOTIONAL_STATES.map((state) => ({ value: state, label: emotionMeta(state).label })),
+            ]}
+          />
         </div>
 
         <div>
@@ -345,43 +344,48 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
           {USES_LOT_UNIT[assetClass] && (
             <div>
               <label className="block text-xs text-text-secondary mb-1">Lot unit</label>
-              <select value={lotUnit} onChange={(e) => setLotUnit(e.target.value as LotUnit)} className="w-full">
-                <option value="standard">Standard (100k)</option>
-                <option value="mini">Mini (10k)</option>
-                <option value="micro">Micro (1k)</option>
-              </select>
+              <Dropdown
+                value={lotUnit}
+                onChange={(v) => setLotUnit(v as LotUnit)}
+                options={[
+                  { value: "standard", label: "Standard (100k)" },
+                  { value: "mini", label: "Mini (10k)" },
+                  { value: "micro", label: "Micro (1k)" },
+                ]}
+              />
             </div>
           )}
         </div>
 
         <div>
           <label className="block text-xs text-text-secondary mb-1">Exit type</label>
-          <select value={exitType} onChange={(e) => setExitType(e.target.value as ExitType)} className="w-full">
-            <option value="">Not closed yet</option>
-            <option value="tp_hit">TP hit</option>
-            <option value="sl_hit">SL hit</option>
-            <option value="trailed_out">Trailed out</option>
-            <option value="manual_close">Manual close</option>
-          </select>
+          <Dropdown
+            value={exitType}
+            onChange={(v) => setExitType(v as ExitType)}
+            options={[
+              { value: "", label: "Not closed yet" },
+              { value: "tp_hit", label: "TP hit" },
+              { value: "sl_hit", label: "SL hit" },
+              { value: "trailed_out", label: "Trailed out" },
+              { value: "manual_close", label: "Manual close" },
+            ]}
+          />
         </div>
       </SectionCard>
 
       <SectionCard icon={BookMarked} title="Playbook" subtitle="Optional — attach a strategy and check its rules">
-        <select
+        <Dropdown
           value={playbookId}
-          onChange={(e) => {
-            setPlaybookId(e.target.value);
+          onChange={(v) => {
+            setPlaybookId(v);
             setRuleChecks({});
           }}
-          className="w-full mb-3"
-        >
-          <option value="">No playbook</option>
-          {playbooks.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "No playbook" },
+            ...playbooks.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+          className="mb-3"
+        />
 
         {activePlaybook && (
           <div className="bg-bg rounded-xl p-3.5 space-y-2.5">

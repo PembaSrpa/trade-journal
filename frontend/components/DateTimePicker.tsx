@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Dropdown } from "@/components/Dropdown";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -219,27 +220,21 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
       {mode === "datetime" && (
         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
           <Clock size={13} className="text-text-muted flex-shrink-0" />
-          <select
-            value={hh}
-            onChange={(e) => updateTime(Number(e.target.value), mm)}
-            className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
-            aria-label="Hour"
-          >
-            {Array.from({ length: 24 }, (_, h) => (
-              <option key={h} value={h}>{pad(h)}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={String(hh)}
+            onChange={(v) => updateTime(Number(v), mm)}
+            options={Array.from({ length: 24 }, (_, h) => ({ value: String(h), label: pad(h) }))}
+            buttonClassName="!py-1.5 !px-2 !text-sm"
+            className="flex-1"
+          />
           <span className="text-text-muted">:</span>
-          <select
-            value={mm}
-            onChange={(e) => updateTime(hh, Number(e.target.value))}
-            className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
-            aria-label="Minute"
-          >
-            {Array.from({ length: 60 }, (_, m) => m).map((m) => (
-              <option key={m} value={m}>{pad(m)}</option>
-            ))}
-          </select>
+          <Dropdown
+            value={String(mm)}
+            onChange={(v) => updateTime(hh, Number(v))}
+            options={Array.from({ length: 60 }, (_, m) => m).map((m) => ({ value: String(m), label: pad(m) }))}
+            buttonClassName="!py-1.5 !px-2 !text-sm"
+            className="flex-1"
+          />
           <span className="text-xs text-text-muted flex-shrink-0">{hh >= 12 ? "PM" : "AM"}</span>
         </div>
       )}

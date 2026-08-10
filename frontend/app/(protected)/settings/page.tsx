@@ -9,6 +9,7 @@ import { getPendingCount, flushQueue } from "@/lib/offlineSync";
 import { PlaybookManager } from "@/components/PlaybookManager";
 import { AccountListSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import type { Account, AccountType } from "@/lib/types";
+import { Dropdown } from "@/components/Dropdown";
 
 export default function SettingsPage() {
   const {
@@ -163,17 +164,17 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-text-secondary mb-1">Type</label>
-              <select
+              <Dropdown
                 value={type}
-                onChange={(e) => setType(e.target.value as AccountType)}
-                className="w-full"
-              >
-                <option value="demo">Demo</option>
-                <option value="live">Live</option>
-              </select>
+                onChange={(v) => setType(v as AccountType)}
+                options={[
+                  { value: "demo", label: "Demo" },
+                  { value: "live", label: "Live" },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-xs text-text-secondary mb-1">Currency</label>
@@ -201,7 +202,7 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-text-secondary mb-1">
                 Broker (optional)

@@ -13,11 +13,15 @@ import { clearCache } from "@/lib/dataCache";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
 import { PRICE_MOVE_LABEL } from "@/lib/instruments";
+import { Dropdown } from "@/components/Dropdown";
 
-type Preset = "today" | "week" | "month" | "custom";
+type Preset = "all" | "today" | "week" | "month" | "custom";
 
 function presetRange(preset: Preset): { from?: string; to?: string } {
   const now = new Date();
+  if (preset === "all") {
+    return {};
+  }
   if (preset === "today") {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return { from: start.toISOString() };
@@ -120,7 +124,7 @@ export default function JournalPage() {
       </div>
 
       <div className="flex gap-2 flex-wrap mb-4">
-        {(["today", "week", "month", "custom"] as Preset[]).map((p) => (
+        {(["today", "week", "month", "all", "custom"] as Preset[]).map((p) => (
           <button
             key={p}
             onClick={() => {
@@ -133,7 +137,7 @@ export default function JournalPage() {
                 : "text-xs"
             }
           >
-            {p === "today" ? "Today" : p === "week" ? "This week" : p === "month" ? "This month" : "Custom"}
+            {p === "today" ? "Today" : p === "week" ? "This week" : p === "month" ? "This month" : p === "all" ? "All time" : "Custom"}
           </button>
         ))}
       </div>
@@ -153,10 +157,16 @@ export default function JournalPage() {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <select value={sort} onChange={(e) => setSort(e.target.value as "desc" | "asc")} className="w-auto text-sm">
-          <option value="desc">Newest first</option>
-          <option value="asc">Oldest first</option>
-        </select>
+        <Dropdown
+          value={sort}
+          onChange={(v) => setSort(v as "desc" | "asc")}
+          options={[
+            { value: "desc", label: "Newest first" },
+            { value: "asc", label: "Oldest first" },
+          ]}
+          buttonClassName="!w-auto !text-sm !py-1.5 !px-3"
+          className="w-auto"
+        />
       </div>
 
       {loading ? (

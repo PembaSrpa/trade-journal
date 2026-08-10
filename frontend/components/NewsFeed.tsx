@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
+import { Dropdown } from "@/components/Dropdown";
 
 interface NewsArticle {
   headline: string;
@@ -48,20 +49,23 @@ export function NewsFeed() {
   return (
     <div>
       <div className="flex gap-2 mb-3">
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full text-sm">
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c === "general" ? "All categories" : c.charAt(0).toUpperCase() + c.slice(1)}
-            </option>
-          ))}
-        </select>
-        <select value={pair} onChange={(e) => setPair(e.target.value)} className="w-full text-sm">
-          {PAIRS.map((p) => (
-            <option key={p} value={p}>
-              {p || "All pairs"}
-            </option>
-          ))}
-        </select>
+        <Dropdown
+          value={category}
+          onChange={setCategory}
+          options={CATEGORIES.map((c) => ({
+            value: c,
+            label: c === "general" ? "All categories" : c.charAt(0).toUpperCase() + c.slice(1),
+          }))}
+          buttonClassName="!text-sm"
+          className="flex-1"
+        />
+        <Dropdown
+          value={pair}
+          onChange={setPair}
+          options={PAIRS.map((p) => ({ value: p, label: p || "All pairs" }))}
+          buttonClassName="!text-sm"
+          className="flex-1"
+        />
       </div>
 
       {loading ? (
