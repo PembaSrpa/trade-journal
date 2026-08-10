@@ -8,6 +8,7 @@ REVENGE_WINDOW_MINUTES = 30
 
 def enrich_closed_trade_pnl(trade: dict) -> float:
     return calc_pnl(
+        trade.get("asset_class", "forex"),
         trade["pair"], trade["direction"], trade["entry_price"], trade["exit_price"],
         trade["lot_size"], trade["lot_unit"], trade.get("commission", 0), trade.get("swap", 0),
     )

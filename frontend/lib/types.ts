@@ -16,7 +16,7 @@ export interface Account {
 
 export type Direction = "long" | "short";
 export type ExitType = "tp_hit" | "sl_hit" | "trailed_out" | "manual_close";
-export type LotUnit = "standard" | "mini" | "micro";
+export type LotUnit = "standard" | "mini" | "micro" | "units";
 export type TradeStatus = "open" | "closed";
 export type EmotionalState =
   | "confident" | "calm" | "disciplined" | "fomo" | "greedy"
@@ -26,6 +26,7 @@ export interface Trade {
   id: string;
   account_id: string;
   pair: string;
+  asset_class: "forex" | "index" | "stock" | "crypto" | "commodity";
   direction: Direction;
   status: TradeStatus;
   entry_price: number;

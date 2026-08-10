@@ -9,6 +9,7 @@ import { getSignedScreenshotUrl } from "@/lib/screenshots";
 import { TradeDetailSkeleton } from "@/components/skeletons/TradeDetailSkeleton";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
+import { PRICE_MOVE_LABEL } from "@/lib/instruments";
 
 export default function TradeDetailClient() {
   const params = useParams<{ id: string }>();
@@ -82,7 +83,7 @@ export default function TradeDetailClient() {
                   </p>
                   {trade.pips !== null && (
                     <p className={`text-sm ${trade.pips >= 0 ? "text-success" : "text-danger"}`}>
-                      {trade.pips >= 0 ? "+" : ""}{trade.pips} pips
+                      {trade.pips >= 0 ? "+" : ""}{trade.pips} {PRICE_MOVE_LABEL[trade.asset_class]}
                     </p>
                   )}
                 </div>

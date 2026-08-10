@@ -29,13 +29,14 @@ class AccountOut(AccountCreate):
 class TradeCreate(BaseModel):
     account_id: str
     pair: str
+    asset_class: Literal["forex", "index", "stock", "crypto", "commodity"] = "forex"
     direction: Literal["long", "short"]
     entry_price: float
     exit_price: Optional[float] = None
     initial_sl: Optional[float] = None
     tp: Optional[float] = None
     lot_size: float
-    lot_unit: Literal["standard", "mini", "micro"] = "standard"
+    lot_unit: Literal["standard", "mini", "micro", "units"] = "standard"
     commission: float = 0
     swap: float = 0
     risk_percent: Optional[float] = None
@@ -56,13 +57,14 @@ class TradeCreate(BaseModel):
 
 class TradeUpdate(BaseModel):
     pair: Optional[str] = None
+    asset_class: Optional[Literal["forex", "index", "stock", "crypto", "commodity"]] = None
     direction: Optional[Literal["long", "short"]] = None
     entry_price: Optional[float] = None
     exit_price: Optional[float] = None
     initial_sl: Optional[float] = None
     tp: Optional[float] = None
     lot_size: Optional[float] = None
-    lot_unit: Optional[Literal["standard", "mini", "micro"]] = None
+    lot_unit: Optional[Literal["standard", "mini", "micro", "units"]] = None
     entry_time: Optional[datetime] = None
     exit_time: Optional[datetime] = None
     exit_type: Optional[Literal["tp_hit", "sl_hit", "trailed_out", "manual_close"]] = None
@@ -83,6 +85,7 @@ class TradeOut(BaseModel):
     id: str
     account_id: str
     pair: str
+    asset_class: str
     direction: str
     status: str
     entry_price: float

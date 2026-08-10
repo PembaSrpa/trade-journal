@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Calendar, Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const MONTH_NAMES = [
@@ -54,7 +55,9 @@ interface DateTimePickerProps {
 
 export function DateTimePicker({ value, onChange, mode = "datetime", required, placeholder }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const parsed = parseValue(value);
 
   const today = new Date();
@@ -74,8 +77,31 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  // Below `sm` (640px) the picker renders as a bottom sheet instead of a
+  // popover, since a fixed-width popover has nowhere good to open from on
+  // a narrow screen and was overflowing past the viewport edge.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!open || !isMobile) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [open, isMobile]);
+
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
+      // The mobile sheet is portaled to <body>, outside containerRef, and
+      // closes via its own backdrop/buttons instead.
+      if (isMobile) return;
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
@@ -87,7 +113,7 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
       document.removeEventListener("mousedown", onClickOutside);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, []);
+  }, [isMobile]);
 
   function commit(y: number, m: number, d: number, hour: number, minute: number) {
     const dateStr = `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -138,6 +164,107 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
       : formatDate(parsed)
     : placeholder ?? (mode === "datetime" ? "Select date & time" : "Select date");
 
+  const calendarBody = (
+    <>
+      <div className="flex items-center justify-between mb-3">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          className="w-8 h-8 !p-0 flex items-center justify-center"
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <button type="button" onClick={goToToday} className="!bg-transparent !border-none text-sm font-medium hover:text-accent-glow">
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </button>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          className="w-8 h-8 !p-0 flex items-center justify-center"
+          aria-label="Next month"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {DAY_LABELS.map((d, i) => (
+          <span key={i} className="text-[10px] text-text-muted text-center">{d}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((day, i) =>
+          day === null ? (
+            <div key={i} />
+          ) : (
+            <button
+              type="button"
+              key={i}
+              onClick={() => selectDay(day)}
+              className={`aspect-square !p-0 text-xs !rounded-lg ${
+                isSelectedDay(day)
+                  ? "!bg-accent !border-accent text-white"
+                  : isToday(day)
+                  ? "!bg-transparent !border-accent/50 text-accent-glow"
+                  : "!bg-transparent"
+              }`}
+            >
+              {day}
+            </button>
+          )
+        )}
+      </div>
+
+      {mode === "datetime" && (
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+          <Clock size={13} className="text-text-muted flex-shrink-0" />
+          <select
+            value={hh}
+            onChange={(e) => updateTime(Number(e.target.value), mm)}
+            className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
+            aria-label="Hour"
+          >
+            {Array.from({ length: 24 }, (_, h) => (
+              <option key={h} value={h}>{pad(h)}</option>
+            ))}
+          </select>
+          <span className="text-text-muted">:</span>
+          <select
+            value={mm}
+            onChange={(e) => updateTime(hh, Number(e.target.value))}
+            className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
+            aria-label="Minute"
+          >
+            {Array.from({ length: 60 }, (_, m) => m).map((m) => (
+              <option key={m} value={m}>{pad(m)}</option>
+            ))}
+          </select>
+          <span className="text-xs text-text-muted flex-shrink-0">{hh >= 12 ? "PM" : "AM"}</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-4">
+        {parsed && !required && (
+          <button
+            type="button"
+            onClick={() => { onChange(""); setOpen(false); }}
+            className="!bg-transparent !border-border flex-1 text-sm flex items-center justify-center gap-1.5 text-text-secondary"
+          >
+            <X size={13} /> Clear
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="bg-accent border-accent hover:bg-accent-glow text-white flex-1 text-sm"
+        >
+          Done
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -152,106 +279,33 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
       </button>
       {required && !parsed && <input tabIndex={-1} required className="sr-only" value="" onChange={() => {}} />}
 
-      {open && (
+      {open && !isMobile && (
         <div className="absolute z-30 mt-2 bg-surface border border-border rounded-2xl p-4 w-[19rem] max-w-[calc(100vw-2rem)] shadow-xl">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              type="button"
-              onClick={() => shiftMonth(-1)}
-              className="w-7 h-7 !p-0 flex items-center justify-center"
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button type="button" onClick={goToToday} className="!bg-transparent !border-none text-sm font-medium hover:text-accent-glow">
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </button>
-            <button
-              type="button"
-              onClick={() => shiftMonth(1)}
-              className="w-7 h-7 !p-0 flex items-center justify-center"
-              aria-label="Next month"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {DAY_LABELS.map((d, i) => (
-              <span key={i} className="text-[10px] text-text-muted text-center">{d}</span>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((day, i) =>
-              day === null ? (
-                <div key={i} />
-              ) : (
-                <button
-                  type="button"
-                  key={i}
-                  onClick={() => selectDay(day)}
-                  className={`aspect-square !p-0 text-xs !rounded-lg ${
-                    isSelectedDay(day)
-                      ? "!bg-accent !border-accent text-white"
-                      : isToday(day)
-                      ? "!bg-transparent !border-accent/50 text-accent-glow"
-                      : "!bg-transparent"
-                  }`}
-                >
-                  {day}
-                </button>
-              )
-            )}
-          </div>
-
-          {mode === "datetime" && (
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-              <Clock size={13} className="text-text-muted flex-shrink-0" />
-              <select
-                value={hh}
-                onChange={(e) => updateTime(Number(e.target.value), mm)}
-                className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
-                aria-label="Hour"
-              >
-                {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>{pad(h)}</option>
-                ))}
-              </select>
-              <span className="text-text-muted">:</span>
-              <select
-                value={mm}
-                onChange={(e) => updateTime(hh, Number(e.target.value))}
-                className="!w-auto !py-1.5 !px-2 !text-sm flex-1"
-                aria-label="Minute"
-              >
-                {Array.from({ length: 60 }, (_, m) => m).map((m) => (
-                  <option key={m} value={m}>{pad(m)}</option>
-                ))}
-              </select>
-              <span className="text-xs text-text-muted flex-shrink-0">{hh >= 12 ? "PM" : "AM"}</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 mt-4">
-            {parsed && !required && (
-              <button
-                type="button"
-                onClick={() => { onChange(""); setOpen(false); }}
-                className="!bg-transparent !border-border flex-1 text-sm flex items-center justify-center gap-1.5 text-text-secondary"
-              >
-                <X size={13} /> Clear
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="bg-accent border-accent hover:bg-accent-glow text-white flex-1 text-sm"
-            >
-              Done
-            </button>
-          </div>
+          {calendarBody}
         </div>
       )}
+
+      {open &&
+        isMobile &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 z-40"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              ref={sheetRef}
+              className="fixed inset-x-0 bottom-0 z-50 bg-surface border-t border-border rounded-t-3xl p-4"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))", maxHeight: "85vh", overflowY: "auto" }}
+            >
+              <div className="w-10 h-1 rounded-full bg-border-strong mx-auto mb-4" />
+              {calendarBody}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

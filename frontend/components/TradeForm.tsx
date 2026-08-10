@@ -18,6 +18,8 @@ import {
 import type { Direction, EmotionalState, ExitType, LotUnit, Playbook, Trade } from "@/lib/types";
 import { EMOTIONAL_STATES, emotionMeta } from "@/lib/emotions";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { InstrumentPicker } from "@/components/InstrumentPicker";
+import { type AssetClass, USES_LOT_UNIT, PRICE_MOVE_LABEL } from "@/lib/instruments";
 
 interface TradeFormProps {
   accountId: string;
@@ -59,6 +61,9 @@ function SectionCard({
 
 export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFormProps) {
   const [pair, setPair] = useState(initial?.pair ?? "EUR/USD");
+  const [assetClass, setAssetClass] = useState<AssetClass>(
+    (initial?.asset_class as AssetClass) ?? "forex"
+  );
   const [direction, setDirection] = useState<Direction>(initial?.direction ?? "long");
   const [entryPrice, setEntryPrice] = useState(initial?.entry_price?.toString() ?? "");
   const [exitPrice, setExitPrice] = useState(initial?.exit_price?.toString() ?? "");
@@ -71,7 +76,9 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
   const [initialSl, setInitialSl] = useState(initial?.initial_sl?.toString() ?? "");
   const [tp, setTp] = useState(initial?.tp?.toString() ?? "");
   const [lotSize, setLotSize] = useState(initial?.lot_size?.toString() ?? "0.1");
-  const [lotUnit, setLotUnit] = useState<LotUnit>(initial?.lot_unit ?? "standard");
+  const [lotUnit, setLotUnit] = useState<LotUnit>(
+    initial?.lot_unit ?? (USES_LOT_UNIT[(initial?.asset_class as AssetClass) ?? "forex"] ? "standard" : "units")
+  );
   const [exitType, setExitType] = useState<ExitType | "">(initial?.exit_type ?? "");
   const [setupTag, setSetupTag] = useState(initial?.setup_tag ?? "");
   const [reasoning, setReasoning] = useState(initial?.reasoning ?? "");
@@ -91,6 +98,16 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
   useEffect(() => {
     apiGet<Playbook[]>(`/playbooks?account_id=${accountId}`).then(setPlaybooks);
   }, [accountId]);
+
+  function handleInstrumentChange(symbol: string, ac: AssetClass) {
+    setPair(symbol);
+    setAssetClass(ac);
+    if (!USES_LOT_UNIT[ac]) {
+      setLotUnit("units");
+    } else if (lotUnit === "units") {
+      setLotUnit("standard");
+    }
+  }
 
   function toLocalInput(iso: string) {
     const d = new Date(iso);
@@ -135,6 +152,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
       const payload: Record<string, unknown> = {
         account_id: accountId,
         pair,
+        asset_class: assetClass,
         direction,
         entry_price: Number(entryPrice),
         exit_price: exitPrice ? Number(exitPrice) : null,
@@ -179,14 +197,9 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
       <div className="bg-surface border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <input
-            value={pair}
-            onChange={(e) => setPair(e.target.value)}
-            className="!text-2xl !font-medium !bg-transparent !border-none !p-0 tracking-tight w-32"
-            required
-          />
-          <div className="flex rounded-xl overflow-hidden border border-border">
+        <div className="flex items-start justify-between mb-4 gap-3">
+          <InstrumentPicker symbol={pair} assetClass={assetClass} onChange={handleInstrumentChange} />
+          <div className="flex rounded-xl overflow-hidden border border-border flex-shrink-0">
             <button
               type="button"
               onClick={() => setDirection("long")}
@@ -208,7 +221,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-text-secondary mb-1">Entry price</label>
             <input
@@ -226,7 +239,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <div>
             <label className="block text-xs text-text-secondary mb-1">Exit price</label>
             <input
@@ -293,7 +306,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
       </SectionCard>
 
       <SectionCard icon={ShieldCheck} title="Risk & result">
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-xs text-text-secondary mb-1">Initial SL</label>
             <input
@@ -315,9 +328,11 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className={`grid grid-cols-1 ${USES_LOT_UNIT[assetClass] ? "sm:grid-cols-2" : ""} gap-3 mb-3`}>
           <div>
-            <label className="block text-xs text-text-secondary mb-1">Lot size</label>
+            <label className="block text-xs text-text-secondary mb-1">
+              {USES_LOT_UNIT[assetClass] ? "Lot size" : "Quantity"}
+            </label>
             <input
               type="number"
               step="0.01"
@@ -327,14 +342,16 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
               required
             />
           </div>
-          <div>
-            <label className="block text-xs text-text-secondary mb-1">Lot unit</label>
-            <select value={lotUnit} onChange={(e) => setLotUnit(e.target.value as LotUnit)} className="w-full">
-              <option value="standard">Standard (100k)</option>
-              <option value="mini">Mini (10k)</option>
-              <option value="micro">Micro (1k)</option>
-            </select>
-          </div>
+          {USES_LOT_UNIT[assetClass] && (
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Lot unit</label>
+              <select value={lotUnit} onChange={(e) => setLotUnit(e.target.value as LotUnit)} className="w-full">
+                <option value="standard">Standard (100k)</option>
+                <option value="mini">Mini (10k)</option>
+                <option value="micro">Micro (1k)</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div>

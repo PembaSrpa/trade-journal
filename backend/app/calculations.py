@@ -4,25 +4,45 @@ CONTRACT_SIZE = {
     "standard": 100000,
     "mini": 10000,
     "micro": 1000,
+    "units": 1,
 }
 
 JPY_PIP_SIZE = 0.01
 DEFAULT_PIP_SIZE = 0.0001
 
+# Metals/oil trade in forex-style pip conventions on most CFD platforms
+# (2-decimal "pips"), unlike the 4-decimal convention for currency pairs.
+COARSE_PIP_SYMBOLS = ("XAU", "XAG", "OIL", "WTI", "BRENT")
+
+# Asset classes where price moves are quoted directly in points/dollars per
+# unit rather than in pips against a contract size (indices, stocks, crypto).
+POINT_BASED_CLASSES = {"index", "stock", "crypto"}
+
 
 def pip_size(pair: str) -> float:
-    return JPY_PIP_SIZE if "JPY" in pair.upper() else DEFAULT_PIP_SIZE
+    p = pair.upper()
+    if "JPY" in p:
+        return JPY_PIP_SIZE
+    if any(sym in p for sym in COARSE_PIP_SYMBOLS):
+        return 0.01
+    return DEFAULT_PIP_SIZE
 
 
-def calc_pips(pair: str, direction: str, entry_price: float, exit_price: float) -> float:
-    size = pip_size(pair)
+def calc_pips(
+    asset_class: str, pair: str, direction: str, entry_price: float, exit_price: float
+) -> float:
     diff = exit_price - entry_price
     if direction == "short":
         diff = -diff
+    if asset_class in POINT_BASED_CLASSES:
+        # "pips" here really means points/dollars moved — no pip conversion.
+        return round(diff, 2)
+    size = pip_size(pair)
     return round(diff / size, 1)
 
 
 def calc_pnl(
+    asset_class: str,
     pair: str,
     direction: str,
     entry_price: float,
@@ -32,11 +52,18 @@ def calc_pnl(
     commission: float,
     swap: float,
 ) -> float:
-    pips = calc_pips(pair, direction, entry_price, exit_price)
-    size = pip_size(pair)
-    contract = CONTRACT_SIZE[lot_unit]
-    pip_value = lot_size * contract * size
-    gross = pips * pip_value
+    if asset_class in POINT_BASED_CLASSES:
+        diff = exit_price - entry_price
+        if direction == "short":
+            diff = -diff
+        # Index/stock/crypto: P&L = price move * quantity, no pip/contract math.
+        gross = diff * lot_size
+    else:
+        pips = calc_pips(asset_class, pair, direction, entry_price, exit_price)
+        size = pip_size(pair)
+        contract = CONTRACT_SIZE[lot_unit]
+        pip_value = lot_size * contract * size
+        gross = pips * pip_value
     return round(gross - commission + swap, 2)
 
 

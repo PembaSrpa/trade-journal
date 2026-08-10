@@ -55,7 +55,7 @@ def compute_stats(db, accounts: list[dict], from_date: str | None, to_date: str 
     events = []
     for t in closed:
         pnl = calc_pnl(
-            t["pair"], t["direction"], t["entry_price"], t["exit_price"],
+            t.get("asset_class", "forex"), t["pair"], t["direction"], t["entry_price"], t["exit_price"],
             t["lot_size"], t["lot_unit"], t.get("commission", 0), t.get("swap", 0),
         )
         events.append({"time": t["exit_time"], "delta": pnl})
@@ -89,7 +89,7 @@ def compute_stats(db, accounts: list[dict], from_date: str | None, to_date: str 
 
     for t in closed:
         pnl = calc_pnl(
-            t["pair"], t["direction"], t["entry_price"], t["exit_price"],
+            t.get("asset_class", "forex"), t["pair"], t["direction"], t["entry_price"], t["exit_price"],
             t["lot_size"], t["lot_unit"], t.get("commission", 0), t.get("swap", 0),
         )
         net_pnl += pnl

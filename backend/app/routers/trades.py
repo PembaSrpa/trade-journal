@@ -27,7 +27,7 @@ def revenge_flags_for_account(db, account_id: str) -> dict[str, bool]:
     Needs the whole history (not just a page) since context comes from prior trades."""
     rows = (
         db.table("trades")
-        .select("id, entry_time, exit_time, status, entry_price, exit_price, pair, direction, lot_size, lot_unit, commission, swap")
+        .select("id, entry_time, exit_time, status, entry_price, exit_price, pair, asset_class, direction, lot_size, lot_unit, commission, swap")
         .eq("account_id", account_id)
         .order("entry_time")
         .execute()
@@ -39,8 +39,10 @@ def revenge_flags_for_account(db, account_id: str) -> dict[str, bool]:
 def enrich_trade(row: dict) -> dict:
     row = dict(row)
     if row.get("exit_price") is not None:
-        row["pips"] = calc_pips(row["pair"], row["direction"], row["entry_price"], row["exit_price"])
+        asset_class = row.get("asset_class", "forex")
+        row["pips"] = calc_pips(asset_class, row["pair"], row["direction"], row["entry_price"], row["exit_price"])
         row["pnl"] = calc_pnl(
+            asset_class,
             row["pair"],
             row["direction"],
             row["entry_price"],

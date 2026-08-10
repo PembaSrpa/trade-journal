@@ -12,6 +12,7 @@ import { useCachedFetch } from "@/lib/useCachedFetch";
 import { clearCache } from "@/lib/dataCache";
 import { emotionMeta } from "@/lib/emotions";
 import type { Trade } from "@/lib/types";
+import { PRICE_MOVE_LABEL } from "@/lib/instruments";
 
 type Preset = "today" | "week" | "month" | "custom";
 
@@ -187,7 +188,7 @@ export default function JournalPage() {
                   </div>
                   {trade.pips !== null && (
                     <p className={`flex-shrink-0 ml-2 ${trade.pips >= 0 ? "text-success font-medium" : "text-danger font-medium"}`}>
-                      {trade.pips >= 0 ? "+" : ""}{trade.pips} pips
+                      {trade.pips >= 0 ? "+" : ""}{trade.pips} {PRICE_MOVE_LABEL[trade.asset_class]}
                     </p>
                   )}
                 </div>
