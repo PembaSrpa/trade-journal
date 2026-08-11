@@ -137,7 +137,7 @@ export default function JournalPage() {
                 : "text-xs"
             }
           >
-            {p === "today" ? "Today" : p === "week" ? "This week" : p === "month" ? "This month" : p === "all" ? "All time" : "Custom"}
+            {p === "today" ? "Today" : p === "week" ? "This week" : p === "month" ? "This month" : p === "all" ? "All" : "Custom"}
           </button>
         ))}
       </div>

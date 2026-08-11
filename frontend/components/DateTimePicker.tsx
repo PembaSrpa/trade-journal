@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Dropdown } from "@/components/Dropdown";
+import { usePopoverPlacement } from "@/lib/usePopoverPlacement";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -60,6 +61,7 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
   const containerRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const parsed = parseValue(value);
+  const { placement, maxHeight } = usePopoverPlacement(open && !isMobile, containerRef, 420);
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(parsed?.y ?? today.getFullYear());
@@ -275,7 +277,12 @@ export function DateTimePicker({ value, onChange, mode = "datetime", required, p
       {required && !parsed && <input tabIndex={-1} required className="sr-only" value="" onChange={() => {}} />}
 
       {open && !isMobile && (
-        <div className="absolute z-30 mt-2 bg-surface border border-border rounded-2xl p-4 w-[19rem] max-w-[calc(100vw-2rem)] shadow-xl">
+        <div
+          className={`absolute z-30 ${
+            placement === "top" ? "bottom-full mb-2" : "top-full mt-2"
+          } bg-surface border border-border rounded-2xl p-4 w-[19rem] max-w-[calc(100vw-2rem)] overflow-y-auto shadow-xl`}
+          style={{ maxHeight }}
+        >
           {calendarBody}
         </div>
       )}

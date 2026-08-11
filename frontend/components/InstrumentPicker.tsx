@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { type AssetClass, ASSET_CLASS_LABEL, INSTRUMENT_GROUPS, guessAssetClass } from "@/lib/instruments";
+import { usePopoverPlacement } from "@/lib/usePopoverPlacement";
 
 interface InstrumentPickerProps {
   symbol: string;
@@ -14,6 +15,7 @@ export function InstrumentPicker({ symbol, assetClass, onChange }: InstrumentPic
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const { placement, maxHeight } = usePopoverPlacement(open, containerRef, 352);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -70,8 +72,13 @@ export function InstrumentPicker({ symbol, assetClass, onChange }: InstrumentPic
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 left-0 bg-surface border border-border rounded-2xl p-3 w-[17rem] max-w-[calc(100vw-2.5rem)] max-h-[22rem] overflow-y-auto shadow-xl">
-          <div className="flex items-center gap-2 bg-bg border border-border rounded-xl px-3 py-2 mb-3 sticky top-0">
+        <div
+          className={`absolute z-30 left-0 ${
+            placement === "top" ? "bottom-full mb-2" : "top-full mt-2"
+          } bg-surface border border-border rounded-2xl p-3 w-[17rem] max-w-[calc(100vw-2.5rem)] overflow-y-auto shadow-xl`}
+          style={{ maxHeight }}
+        >
+          <div className="flex items-center gap-2 bg-bg rounded-xl px-3 py-2 mb-3 sticky top-0 focus-within:ring-1 focus-within:ring-border-strong">
             <Search size={13} className="text-text-muted flex-shrink-0" />
             <input
               autoFocus

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.calculations import calc_hold_minutes, calc_pips, calc_pnl, calc_r_multiple, calc_session, calc_session
+from app.calculations import calc_hold_minutes, calc_pips, calc_pnl, calc_r_multiple, calc_session
 from app.db import get_service_client
 from app.models import TradeCreate, TradeOut, TradeUpdate
 from app.overview_analytics import flag_revenge_trades
@@ -204,12 +204,16 @@ def update_trade(
     trade = existing.data[0]
     assert_account_ownership(db, trade["account_id"], user_id)
 
-    updates = payload.model_dump(exclude_none=True, exclude={"screenshot_url", "tags"})
-    if "entry_time" in updates:
+    # exclude_unset (not exclude_none) so that explicitly clearing an optional
+    # field — sending null for exit_price, tp, exit_type, playbook_id, etc. —
+    # actually clears it in the database instead of being silently dropped
+    # and leaving the previous value in place.
+    updates = payload.model_dump(exclude_unset=True, exclude={"screenshot_url", "tags"})
+    if "entry_time" in updates and updates["entry_time"] is not None:
         updates["entry_time"] = updates["entry_time"].isoformat()
         account = assert_account_ownership(db, trade["account_id"], user_id)
         updates["session"] = calc_session(payload.entry_time, account["broker_timezone_offset"])
-    if "exit_time" in updates:
+    if "exit_time" in updates and updates["exit_time"] is not None:
         updates["exit_time"] = updates["exit_time"].isoformat()
     if updates.get("exit_price") is not None and updates.get("status") is None:
         updates["status"] = "closed"

@@ -146,11 +146,11 @@ def test_calc_session_london_with_string_timestamp():
 
 
 def test_calc_session_new_york():
-    assert calc_session("2026-07-28T14:00:00+00:00", 0) == "new_york"
+    assert calc_session("2026-07-28T18:00:00+00:00", 0) == "new_york"
 
 
 def test_calc_session_asia():
-    assert calc_session("2026-07-28T20:15:00+00:00", 0) == "asia"
+    assert calc_session("2026-07-28T03:15:00+00:00", 0) == "asia"
 
 
 def test_calc_session_respects_broker_offset():

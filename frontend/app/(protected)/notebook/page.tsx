@@ -272,7 +272,7 @@ export default function NotebookPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search entries"
-                  className="!text-xs w-full !pl-7 !py-1.5"
+                  className="!text-xs w-full !pl-7 !py-1.5 !border-none !bg-surface focus:!ring-1 focus:!ring-border-strong"
                 />
                 {query && (
                   <button

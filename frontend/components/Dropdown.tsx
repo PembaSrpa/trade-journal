@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
+import { usePopoverPlacement } from "@/lib/usePopoverPlacement";
 
 export interface DropdownOption<T extends string> {
   value: T;
@@ -31,6 +32,7 @@ export function Dropdown<T extends string>({
 }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { placement, maxHeight } = usePopoverPlacement(open, ref, 256);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -65,9 +67,10 @@ export function Dropdown<T extends string>({
 
       {open && (
         <div
-          className={`absolute z-30 mt-2 ${
+          className={`absolute z-30 ${placement === "top" ? "bottom-full mb-2" : "top-full mt-2"} ${
             align === "right" ? "right-0" : "left-0"
-          } bg-surface border border-border rounded-2xl p-1.5 min-w-full w-max max-w-[calc(100vw-2.5rem)] max-h-[16rem] overflow-y-auto shadow-xl`}
+          } bg-surface border border-border rounded-2xl p-1.5 min-w-full w-max max-w-[calc(100vw-2.5rem)] overflow-y-auto shadow-xl`}
+          style={{ maxHeight }}
         >
           {options.length === 0 && (
             <p className="text-xs text-text-muted px-2.5 py-2">No options</p>

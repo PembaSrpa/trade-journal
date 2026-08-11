@@ -100,8 +100,12 @@ def calc_hold_minutes(entry_time: datetime | str, exit_time: datetime | str | No
 def calc_session(entry_time: datetime | str, broker_timezone_offset: int) -> str:
     entry = _as_datetime(entry_time)
     adjusted_hour = (entry.hour + broker_timezone_offset) % 24
-    if 7 <= adjusted_hour < 12:
+    # Three even, non-overlapping 8-hour bands. (The old 7-12/12-17 split left
+    # London and New York just 5 hours each and dumped the remaining 14 hours
+    # — over half the day — into Asia by default, so nearly everything got
+    # tagged Asia regardless of when it was actually entered.)
+    if 0 <= adjusted_hour < 8:
+        return "asia"
+    if 8 <= adjusted_hour < 16:
         return "london"
-    if 12 <= adjusted_hour < 17:
-        return "new_york"
-    return "asia"
+    return "new_york"

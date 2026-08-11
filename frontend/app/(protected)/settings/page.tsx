@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Archive, RefreshCw, Trash2 } from "lucide-react";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
-import { useAccountContext } from "@/lib/AccountContext";
+import { useAccountContext, ACCOUNTS_CACHE_KEY } from "@/lib/AccountContext";
+import { clearCache } from "@/lib/dataCache";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { getPendingCount, flushQueue } from "@/lib/offlineSync";
 import { PlaybookManager } from "@/components/PlaybookManager";
@@ -65,6 +66,7 @@ export default function SettingsPage() {
 
   async function handleArchive(id: string) {
     await apiPatch(`/accounts/${id}/archive`, {});
+    await clearCache(ACCOUNTS_CACHE_KEY);
     await refreshAccounts();
   }
 
@@ -74,6 +76,7 @@ export default function SettingsPage() {
     );
     if (!confirmed) return;
     await apiDelete(`/accounts/${id}`);
+    await clearCache(ACCOUNTS_CACHE_KEY);
     await refreshAccounts();
   }
 

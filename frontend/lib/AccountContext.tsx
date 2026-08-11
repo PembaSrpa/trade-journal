@@ -21,7 +21,7 @@ interface AccountContextValue {
 const AccountContext = createContext<AccountContextValue | null>(null);
 
 const STORAGE_KEY = "journal_selected_account_id";
-const ACCOUNTS_CACHE_KEY = "accounts:list";
+export const ACCOUNTS_CACHE_KEY = "accounts:list";
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
