@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Trash2, AlertTriangle, Brain } from "lucide-react";
 import { apiDelete, apiGet } from "@/lib/api";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { getSignedScreenshotUrl } from "@/lib/screenshots";
 import { useAccountContext } from "@/lib/AccountContext";
 import { readCache, writeCache, clearCacheByPrefix } from "@/lib/dataCache";
@@ -24,6 +25,7 @@ export default function TradeDetailPage() {
 function TradeDetailInner() {
   const id = useSearchParams().get("id");
   const router = useRouter();
+  const confirmDialog = useConfirm();
   const { triggerSync } = useAccountContext();
   const [trade, setTrade] = useState<Trade | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
@@ -67,7 +69,14 @@ function TradeDetailInner() {
   }, [id]);
 
   async function handleDelete() {
-    if (!id || !confirm("Delete this trade? This cannot be undone.")) return;
+    if (!id) return;
+    const ok = await confirmDialog({
+      title: "Delete this trade?",
+      description: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await apiDelete(`/trades/${id}`);
     await clearCacheByPrefix("trades:");
     await clearCacheByPrefix("stats:");

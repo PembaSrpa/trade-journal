@@ -78,7 +78,7 @@ export function InstrumentPicker({ symbol, assetClass, onChange }: InstrumentPic
           } bg-surface border border-border rounded-2xl p-3 w-[17rem] max-w-[calc(100vw-2.5rem)] overflow-y-auto shadow-xl`}
           style={{ maxHeight }}
         >
-          <div className="flex items-center gap-2 bg-bg rounded-xl px-3 py-2 mb-3 sticky top-0 focus-within:ring-1 focus-within:ring-border-strong">
+          <div className="flex items-center gap-2 bg-bg rounded-xl px-3 py-2 mb-3 sticky top-0">
             <Search size={13} className="text-text-muted flex-shrink-0" />
             <input
               autoFocus

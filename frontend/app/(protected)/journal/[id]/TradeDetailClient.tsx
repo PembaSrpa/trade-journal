@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Trash2, AlertTriangle, Brain } from "lucide-react";
 import { apiDelete, apiGet } from "@/lib/api";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { getSignedScreenshotUrl } from "@/lib/screenshots";
 import { TradeDetailSkeleton } from "@/components/skeletons/TradeDetailSkeleton";
 import { emotionMeta } from "@/lib/emotions";
@@ -14,6 +15,7 @@ import { PRICE_MOVE_LABEL } from "@/lib/instruments";
 export default function TradeDetailClient() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const confirmDialog = useConfirm();
   const [trade, setTrade] = useState<Trade | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,13 @@ export default function TradeDetailClient() {
   }, [params.id]);
 
   async function handleDelete() {
-    if (!confirm("Delete this trade? This cannot be undone.")) return;
+    const ok = await confirmDialog({
+      title: "Delete this trade?",
+      description: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await apiDelete(`/trades/${params.id}`);
     router.push("/journal");
   }

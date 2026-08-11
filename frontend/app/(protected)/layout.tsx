@@ -14,6 +14,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AccountProvider, useAccountContext } from "@/lib/AccountContext";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { createClient } from "@/lib/supabase/client";
 import { startSyncListener, flushQueue } from "@/lib/offlineSync";
@@ -300,8 +301,10 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AccountProvider>
-      <Shell>{children}</Shell>
-    </AccountProvider>
+    <ConfirmProvider>
+      <AccountProvider>
+        <Shell>{children}</Shell>
+      </AccountProvider>
+    </ConfirmProvider>
   );
 }

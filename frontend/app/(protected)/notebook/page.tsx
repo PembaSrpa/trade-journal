@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { readCache, writeCache } from "@/lib/dataCache";
@@ -46,6 +47,7 @@ function wordCount(text: string): number {
 
 export default function NotebookPage() {
   const { selectedAccountId, syncNonce } = useAccountContext();
+  const confirmDialog = useConfirm();
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [content, setContent] = useState("");
   const [entries, setEntries] = useState<NotebookEntry[]>([]);
@@ -158,7 +160,13 @@ export default function NotebookPage() {
   }
 
   async function handleDelete(entry: NotebookEntry) {
-    if (!confirm(`Delete the notebook entry for ${entry.entry_date}? This can't be undone.`)) return;
+    const ok = await confirmDialog({
+      title: "Delete this notebook entry?",
+      description: `Entry for ${entry.entry_date}. This can't be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await apiDelete(`/notebook/${entry.id}`);
     setEntries((prev) => {
       const next = prev.filter((e) => e.id !== entry.id);

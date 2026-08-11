@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Archive, RefreshCw, Trash2 } from "lucide-react";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { useAccountContext, ACCOUNTS_CACHE_KEY } from "@/lib/AccountContext";
 import { clearCache } from "@/lib/dataCache";
 import { isCombinedSelection } from "@/lib/accountSelection";
@@ -21,6 +22,7 @@ export default function SettingsPage() {
     accountsStatus,
     triggerSync,
   } = useAccountContext();
+  const confirmDialog = useConfirm();
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("demo");
   const [currency, setCurrency] = useState("USD");
@@ -71,10 +73,14 @@ export default function SettingsPage() {
   }
 
   async function handleDelete(id: string, name: string) {
-    const confirmed = confirm(
-      `Permanently delete "${name}"? This deletes every trade in it and cannot be undone. Archive instead if you just want it hidden.`
-    );
-    if (!confirmed) return;
+    const ok = await confirmDialog({
+      title: `Permanently delete "${name}"?`,
+      description:
+        "This deletes every trade in it and cannot be undone. Archive instead if you just want it hidden.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await apiDelete(`/accounts/${id}`);
     await clearCache(ACCOUNTS_CACHE_KEY);
     await refreshAccounts();

@@ -498,12 +498,19 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
       </SectionCard>
 
       <label className="flex items-center gap-2.5 bg-surface border border-border rounded-2xl p-4 cursor-pointer">
+        <div
+          className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border ${
+            followedPlan ? "bg-accent border-accent" : "border-border-strong"
+          }`}
+        >
+          {followedPlan && <Check size={11} className="text-white" />}
+        </div>
         <input
           type="checkbox"
           id="followedPlan"
+          className="hidden"
           checked={followedPlan}
           onChange={(e) => setFollowedPlan(e.target.checked)}
-          className="!w-auto"
         />
         <span className="text-sm">Followed my trading plan</span>
       </label>
