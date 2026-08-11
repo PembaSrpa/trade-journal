@@ -93,7 +93,7 @@ export function InstrumentPicker({ symbol, assetClass, onChange }: InstrumentPic
                 }
               }}
               placeholder="Search or type any symbol"
-              className="!bg-transparent !border-none !p-0 !text-sm w-full focus:!scale-100"
+              className="!bg-transparent !border-none !p-0 !text-sm w-full focus:!scale-100 focus-visible:!outline-none"
             />
           </div>
 
