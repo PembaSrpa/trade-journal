@@ -1,4 +1,4 @@
-# Trading Journal (offline)
+# Trading Journal
 
 A personal trading journal that runs **entirely on your device** — no account, no server, no sign-in, no internet.
 Log trades, track performance, and spot psychological patterns (revenge trading, emotion vs. outcome, rule adherence).
@@ -17,11 +17,6 @@ It ships as a static website and as an Android app (Capacitor) from the same cod
   - **Merge** — adds only what's missing. Existing records are never overwritten or duplicated, so it's safe to run twice.
   - **Replace everything** — wipes this device's data and loads the backup. If writing fails partway, your previous data is restored.
 - Use export → import to move to a new phone or keep a safety copy.
-
-### Coming from the old Supabase version?
-Run once on a computer: `SUPABASE_URL=... SUPABASE_SERVICE_KEY=... node tools/migrate-from-supabase.mjs`
-(see the header of that file), then import the file it writes. Needs Node 18+, no dependencies. Sessions are recomputed
-under the new market-hours rule during import.
 
 ## Features
 - Accounts (demo/live), trades across forex, indices, stocks, crypto and commodities, tags, playbooks with rule checklists, notebook, chart screenshots.
@@ -42,23 +37,3 @@ under the new market-hours rule during import.
 - **Revenge trade:** opened within 30 minutes of the exit of the previous closed trade, if that trade lost (per account).
 - **Date ranges:** a trade belongs to the period it was *opened* in. With a range selected the equity curve starts from the balance at the range start (starting balance + everything before it) and drawdown is measured inside the range.
 - Clearing a trade's exit price re-opens it.
-
-## Develop
-```bash
-cd frontend
-npm install
-npm run dev        # http://localhost:3000
-npm test           # Vitest: calculations, analytics, local data layer, backup/import
-npm run build      # static site -> frontend/out (also what Android bundles)
-```
-Layout: `lib/core/` pure calculations & analytics · `lib/local/` storage (IndexedDB), the local API (`repo.ts`) and backup · `components/DataSettings.tsx` backup/PIN/news UI.
-The web build registers a service worker (`public/sw.js`) so the site also works offline after its first load.
-
-## Android
-```bash
-cd frontend
-npm run android:build     # builds ./out and syncs it into the Android project
-npx cap open android      # then build/run from Android Studio
-```
-Re-run `npm install` first if you're upgrading from the Supabase version: it adds the Capacitor Filesystem and Share plugins
-(used to save/share backups) and removes the Network and Preferences plugins.
