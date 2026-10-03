@@ -1,5 +1,6 @@
 "use client";
 
+import { UnconvertedBadge } from "@/components/UnconvertedBadge";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -130,6 +131,7 @@ function TradeDetailInner() {
                   <p className={`text-xl font-medium ${trade.pnl >= 0 ? "text-success" : "text-danger"}`}>
                     {trade.pnl >= 0 ? "+" : ""}${trade.pnl.toLocaleString()}
                   </p>
+                  {trade.pnl_unconverted && <UnconvertedBadge className="mb-1" />}
                   {trade.pips !== null && (
                     <p className={`text-sm ${trade.pips >= 0 ? "text-success" : "text-danger"}`}>
                       {trade.pips >= 0 ? "+" : ""}{trade.pips} {PRICE_MOVE_LABEL[trade.asset_class]}

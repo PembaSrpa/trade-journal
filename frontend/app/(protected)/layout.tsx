@@ -2,23 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   BookOpen,
   NotebookPen,
   Settings,
-  RefreshCw,
-  LogOut,
+  Database,
   TrendingUp,
 } from "lucide-react";
-import { AccountProvider, useAccountContext } from "@/lib/AccountContext";
+import { AccountProvider } from "@/lib/AccountContext";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
-import { createClient } from "@/lib/supabase/client";
-import { startSyncListener, flushQueue } from "@/lib/offlineSync";
-import { SyncBadge } from "@/components/SyncBadge";
+import { AppLockGate } from "@/components/AppLockGate";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
@@ -74,45 +71,9 @@ function NavLink({
   );
 }
 
-function useUsername() {
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user.email ?? "";
-      const name = email.split("@")[0];
-      setUsername(name || null);
-    });
-  }, []);
-
-  return username;
-}
-
-function UserAvatar({ username, size = 32 }: { username: string | null; size?: number }) {
-  const initial = username ? username[0].toUpperCase() : "?";
-  return (
-    <div
-      className="rounded-full bg-accent-dim border border-border-strong flex items-center justify-center text-accent-glow font-medium flex-shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {initial}
-    </div>
-  );
-}
-
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { triggerSync, refreshAccounts, accountsStatus, accountsCachedAt } = useAccountContext();
-  const username = useUsername();
-  const [syncing, setSyncing] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const stop = startSyncListener();
-    return stop;
-  }, []);
 
   useEffect(() => {
     setCollapsed(localStorage.getItem("sidebar-collapsed") === "1");
@@ -124,38 +85,6 @@ function Shell({ children }: { children: React.ReactNode }) {
       localStorage.setItem("sidebar-collapsed", next ? "1" : "0");
       return next;
     });
-  }
-
-  async function handleSyncClick() {
-    setSyncing(true);
-    await flushQueue();
-    await refreshAccounts();
-    triggerSync();
-    setSyncing(false);
-  }
-
-  // Client-side auth guard. The Next.js middleware only runs when this app
-  // is served by the Next.js server (the website); the Android build loads
-  // a locally-bundled copy with no middleware, so this check is what keeps
-  // /overview, /journal, /notebook, /settings etc. protected there.
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        router.replace("/login");
-      }
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.replace("/login");
-    });
-    return () => listener.subscription.unsubscribe();
-  }, [router]);
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
   }
 
   return (
@@ -199,44 +128,16 @@ function Shell({ children }: { children: React.ReactNode }) {
               collapsed ? "justify-center" : ""
             }`}
           >
-            <UserAvatar username={username} size={collapsed ? 28 : 32} />
+            <div className="w-8 h-8 rounded-full bg-accent-dim border border-border-strong flex items-center justify-center flex-shrink-0">
+              <Database size={14} className="text-accent-glow" />
+            </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                {username ? (
-                  <p className="text-sm font-medium truncate">{username}</p>
-                ) : (
-                  <div className="h-4 w-20 rounded bg-surface-2 animate-pulse mb-1" />
-                )}
-                <p className="text-xs text-text-muted">Signed in</p>
+                <p className="text-sm font-medium truncate">Local journal</p>
+                <p className="text-xs text-text-muted">Stored on this device</p>
               </div>
             )}
           </div>
-
-          <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : "justify-between"}`}>
-            <button
-              onClick={handleSyncClick}
-              disabled={syncing}
-              title="Sync now"
-              className={`flex items-center gap-1.5 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-text ${
-                collapsed ? "justify-center" : ""
-              }`}
-            >
-              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-              {!collapsed && (syncing ? "Syncing..." : "Sync")}
-            </button>
-            {!collapsed && <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} />}
-          </div>
-
-          <button
-            onClick={handleSignOut}
-            title="Sign out"
-            className={`w-full flex items-center gap-2 text-xs text-text-secondary bg-transparent border-none px-0 hover:text-danger ${
-              collapsed ? "justify-center" : ""
-            }`}
-          >
-            <LogOut size={14} />
-            {!collapsed && "Sign out"}
-          </button>
         </div>
       </aside>
 
@@ -247,28 +148,9 @@ function Shell({ children }: { children: React.ReactNode }) {
               <TrendingUp size={16} className="text-accent-glow flex-shrink-0" />
               <span className="font-medium text-sm truncate">Journal</span>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <button
-                onClick={handleSyncClick}
-                disabled={syncing}
-                aria-label="Sync now"
-                className="!w-8 !h-8 !p-0 flex items-center justify-center text-text-secondary hover:text-text"
-              >
-                <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
-              </button>
-              <UserAvatar username={username} size={28} />
-              <button
-                onClick={handleSignOut}
-                aria-label="Sign out"
-                className="!w-8 !h-8 !p-0 flex items-center justify-center text-text-secondary hover:text-danger"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
           </div>
           <div className="px-4 pb-3 flex items-center justify-between gap-2">
             <AccountSwitcher className="flex-1 min-w-0" />
-            <SyncBadge status={accountsStatus} cachedAt={accountsCachedAt} className="flex-shrink-0 whitespace-nowrap" />
           </div>
         </div>
 
@@ -302,9 +184,11 @@ function Shell({ children }: { children: React.ReactNode }) {
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <ConfirmProvider>
-      <AccountProvider>
-        <Shell>{children}</Shell>
-      </AccountProvider>
+      <AppLockGate>
+        <AccountProvider>
+          <Shell>{children}</Shell>
+        </AccountProvider>
+      </AppLockGate>
     </ConfirmProvider>
   );
 }

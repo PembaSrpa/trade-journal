@@ -1,68 +1,18 @@
-import { createClient } from "@/lib/supabase/client";
+/**
+ * Local data access. This file used to be an HTTP client for the FastAPI
+ * backend; it now routes the same calls to the on-device repository, so
+ * every page keeps working unchanged and the app needs no network at all.
+ */
+import { getRepo } from "@/lib/local";
+import { saveTextFile } from "@/lib/local/files";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+export const apiGet = <T,>(path: string): Promise<T> => getRepo().handle<T>("GET", path);
+export const apiPost = <T,>(path: string, body: unknown): Promise<T> => getRepo().handle<T>("POST", path, body);
+export const apiPatch = <T,>(path: string, body: unknown): Promise<T> => getRepo().handle<T>("PATCH", path, body);
+export const apiDelete = <T,>(path: string): Promise<T> => getRepo().handle<T>("DELETE", path);
 
-async function authHeader(): Promise<Record<string, string>> {
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    throw new Error("Not authenticated");
-  }
-
-  return { Authorization: `Bearer ${session.access_token}` };
-}
-
-export async function apiGet<T>(path: string): Promise<T> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_URL}${path}`, { headers });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "PATCH",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
+/** CSV export of the journal list (honors an optional &from=&to= range). */
 export async function apiDownload(path: string, filename: string): Promise<void> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_URL}${path}`, { headers });
-  if (!res.ok) throw new Error(await res.text());
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-export async function apiDelete<T>(path: string): Promise<T> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "DELETE",
-    headers,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const { text, mime } = await getRepo().handle<{ text: string; mime: string }>("GET", path);
+  await saveTextFile(filename, text, mime);
 }

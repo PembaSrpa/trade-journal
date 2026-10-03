@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
-import { readCache, writeCache } from "@/lib/dataCache";
 import type { SyncStatus } from "@/lib/useCachedFetch";
 import type { Account } from "@/lib/types";
 
@@ -25,13 +24,13 @@ export const ACCOUNTS_CACHE_KEY = "accounts:list";
 
 export function AccountProvider({ children }: { children: React.ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() =>
-    typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
-  );
+  // Start empty: the remembered id is only trusted once the account list has loaded
+  // and confirmed it still exists (it may not after a wipe or a Replace import).
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncNonce, setSyncNonce] = useState(0);
   const [accountsStatus, setAccountsStatus] = useState<SyncStatus>("initial");
-  const [accountsCachedAt, setAccountsCachedAt] = useState<string | null>(null);
+  const accountsCachedAt: string | null = null;
 
   function triggerSync() {
     setSyncNonce((n) => n + 1);
@@ -55,22 +54,12 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function refreshAccounts() {
-    const cached = await readCache<Account[]>(ACCOUNTS_CACHE_KEY);
-    if (cached) {
-      await applyAccounts(cached.data);
-      setAccountsCachedAt(cached.cachedAt);
-      setAccountsStatus("revalidating");
-    }
-
     try {
       const data = await apiGet<Account[]>("/accounts");
       await applyAccounts(data);
-      const now = new Date().toISOString();
-      setAccountsCachedAt(now);
       setAccountsStatus("live");
-      void writeCache(ACCOUNTS_CACHE_KEY, data);
     } catch {
-      setAccountsStatus(cached ? "cached" : "error");
+      setAccountsStatus("error");
     }
   }
 

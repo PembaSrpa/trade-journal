@@ -12,7 +12,7 @@ export function PlaybookManager({ accountId }: { accountId: string }) {
   const [saving, setSaving] = useState(false);
 
   const refresh = useCallback(() => {
-    apiGet<Playbook[]>(`/playbooks?account_id=${accountId}`).then(setPlaybooks);
+    apiGet<Playbook[]>(`/playbooks?account_id=${accountId}`).then(setPlaybooks).catch(() => setPlaybooks([]));
   }, [accountId]);
 
   useEffect(() => {

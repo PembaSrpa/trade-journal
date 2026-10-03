@@ -3,8 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { submitTradeWithOfflineFallback } from "@/lib/offlineSync";
-import { useConfirm } from "@/components/ConfirmDialog";
+import { apiPost } from "@/lib/api";
 import { useAccountContext } from "@/lib/AccountContext";
 import { isCombinedSelection } from "@/lib/accountSelection";
 import { clearCacheByPrefix } from "@/lib/dataCache";
@@ -13,7 +12,6 @@ import { TradeForm } from "@/components/TradeForm";
 export default function NewTradePage() {
   const router = useRouter();
   const { selectedAccountId, triggerSync } = useAccountContext();
-  const confirmDialog = useConfirm();
 
   if (!selectedAccountId || isCombinedSelection(selectedAccountId)) {
     return (
@@ -24,15 +22,7 @@ export default function NewTradePage() {
   }
 
   async function handleSubmit(payload: Record<string, unknown>) {
-    const result = await submitTradeWithOfflineFallback(payload);
-    if (!result.synced) {
-      await confirmDialog({
-        title: "Saved offline",
-        description: "No connection — this trade will sync automatically once you're back online.",
-        confirmLabel: "OK",
-        alertOnly: true,
-      });
-    }
+    await apiPost("/trades", payload);
     // Wipe cached journal lists and stats so the next view picks up the new
     // entry right away instead of showing a stale list until a manual sync.
     await clearCacheByPrefix("trades:");

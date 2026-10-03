@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { saveScreenshot } from "@/lib/screenshots";
 import { apiGet } from "@/lib/api";
 import {
   ArrowUpRight,
@@ -76,6 +76,8 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
   );
   const [initialSl, setInitialSl] = useState(initial?.initial_sl?.toString() ?? "");
   const [tp, setTp] = useState(initial?.tp?.toString() ?? "");
+  const [riskPercent, setRiskPercent] = useState(initial?.risk_percent?.toString() ?? "");
+  const [conversionRate, setConversionRate] = useState(initial?.conversion_rate?.toString() ?? "");
   const [lotSize, setLotSize] = useState(initial?.lot_size?.toString() ?? "0.1");
   const [lotUnit, setLotUnit] = useState<LotUnit>(
     initial?.lot_unit ?? (USES_LOT_UNIT[(initial?.asset_class as AssetClass) ?? "forex"] ? "standard" : "units")
@@ -97,7 +99,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiGet<Playbook[]>(`/playbooks?account_id=${accountId}`).then(setPlaybooks);
+    apiGet<Playbook[]>(`/playbooks?account_id=${accountId}`).then(setPlaybooks).catch(() => setPlaybooks([]));
   }, [accountId]);
 
   function handleInstrumentChange(symbol: string, ac: AssetClass) {
@@ -119,20 +121,7 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
 
   async function uploadScreenshot(): Promise<string | null> {
     if (!screenshot) return null;
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const path = `${user.id}/${Date.now()}-${screenshot.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("screenshots")
-      .upload(path, screenshot);
-
-    if (uploadError) return null;
-
-    return path;
+    return saveScreenshot(screenshot);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -159,6 +148,8 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
         exit_price: exitPrice ? Number(exitPrice) : null,
         initial_sl: initialSl ? Number(initialSl) : null,
         tp: tp ? Number(tp) : null,
+        risk_percent: riskPercent ? Number(riskPercent) : null,
+        conversion_rate: conversionRate ? Number(conversionRate) : null,
         lot_size: Number(lotSize),
         lot_unit: lotUnit,
         entry_time: new Date(entryTime).toISOString(),
@@ -326,7 +317,35 @@ export function TradeForm({ accountId, initial, onSubmit, submitLabel }: TradeFo
               className="w-full"
             />
           </div>
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Risk % of account (optional)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={riskPercent}
+              onChange={(e) => setRiskPercent(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Conversion rate (optional)</label>
+            <input
+              type="number"
+              step="0.00001"
+              min="0"
+              value={conversionRate}
+              onChange={(e) => setConversionRate(e.target.value)}
+              placeholder="e.g. 1.25"
+              className="w-full"
+            />
+          </div>
         </div>
+        <p className="text-xs text-text-muted mb-3">
+          Conversion rate: how many units of your account currency 1 unit of the pair&apos;s quote currency is worth at
+          close (EUR/GBP on a USD account → GBP→USD). Only needed when the pair isn&apos;t quoted in, or based on, your
+          account currency.
+        </p>
         <div className={`grid grid-cols-1 ${USES_LOT_UNIT[assetClass] ? "sm:grid-cols-2" : ""} gap-3 mb-3`}>
           <div>
             <label className="block text-xs text-text-secondary mb-1">

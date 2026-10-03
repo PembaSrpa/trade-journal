@@ -35,14 +35,24 @@ export function NewsFeed() {
   const [pair, setPair] = useState("");
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [problem, setProblem] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setProblem(null);
     const params = new URLSearchParams({ category });
     if (pair) params.set("pair", pair);
     apiGet<NewsArticle[]>(`/news?${params.toString()}`)
       .then(setArticles)
-      .catch(() => setArticles([]))
+      .catch((e: Error) => {
+        setArticles([]);
+        setProblem(
+          e.message === "NO_KEY" ? "News is optional and needs internet. Add a free Finnhub API key in Settings to turn it on."
+          : e.message === "OFFLINE" ? "You're offline — news will appear when you're back online."
+          : e.message === "BAD_KEY" ? "Finnhub rejected the API key. Check it in Settings."
+          : "Couldn't load news right now."
+        );
+      })
       .finally(() => setLoading(false));
   }, [category, pair]);
 
@@ -70,6 +80,8 @@ export function NewsFeed() {
 
       {loading ? (
         <p className="text-text-secondary text-sm">Loading news...</p>
+      ) : problem ? (
+        <p className="text-text-secondary text-sm">{problem}</p>
       ) : articles.length === 0 ? (
         <p className="text-text-secondary text-sm">No articles for this filter.</p>
       ) : (

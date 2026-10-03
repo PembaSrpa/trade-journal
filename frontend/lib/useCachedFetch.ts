@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readCache, writeCache } from "@/lib/dataCache";
 
 export type SyncStatus = "initial" | "cached" | "revalidating" | "live" | "error";
 
@@ -10,6 +9,11 @@ interface UseCachedFetchResult<T> {
   refetch: () => void;
 }
 
+/**
+ * Loads data from the on-device repository. Kept under its old name/shape so
+ * pages don't change; there is no network cache any more — reads are local.
+ * `cacheKey` is only used as an on/off switch (null = don't fetch yet).
+ */
 export function useCachedFetch<T>(
   cacheKey: string | null,
   fetcher: () => Promise<T>,
@@ -17,7 +21,6 @@ export function useCachedFetch<T>(
 ): UseCachedFetchResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [status, setStatus] = useState<SyncStatus>("initial");
-  const [cachedAt, setCachedAt] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
@@ -25,35 +28,21 @@ export function useCachedFetch<T>(
   const run = useCallback(async () => {
     if (!cacheKey) return;
     const requestId = ++requestIdRef.current;
-
-    const cached = await readCache<T>(cacheKey);
-    if (requestId !== requestIdRef.current) return;
-
-    if (cached) {
-      setData(cached.data);
-      setCachedAt(cached.cachedAt);
-      setStatus("revalidating");
-    } else {
-      setStatus("initial");
-    }
-
     try {
       const fresh = await fetcherRef.current();
       if (requestId !== requestIdRef.current) return;
       setData(fresh);
       setStatus("live");
-      const now = new Date().toISOString();
-      setCachedAt(now);
-      void writeCache(cacheKey, fresh);
     } catch {
       if (requestId !== requestIdRef.current) return;
-      setStatus(cached ? "cached" : "error");
+      setStatus("error");
     }
   }, [cacheKey]);
 
   useEffect(() => {
     run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return { data, status, cachedAt, refetch: run };
+  return { data, status, cachedAt: null, refetch: run };
 }

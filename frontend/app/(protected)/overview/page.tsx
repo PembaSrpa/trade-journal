@@ -282,7 +282,17 @@ export default function OverviewPage() {
             </div>
           )}
 
-          <p className="text-xs text-text-muted">{stats.closed_trades} closed trades in this account</p>
+          <p className="text-xs text-text-muted">
+            {stats.closed_trades} closed trades in this range
+            {stats.breakeven_trades > 0 && ` · ${stats.breakeven_trades} breakeven (not counted in win rate)`}
+          </p>
+          {stats.unconverted_trades > 0 && (
+            <p className="text-xs text-amber-400 mt-1">
+              {stats.unconverted_trades} trade{stats.unconverted_trades === 1 ? "" : "s"} on pairs not quoted in your
+              account currency {stats.unconverted_trades === 1 ? "has" : "have"} no conversion rate, so totals include
+              their P/L in the quote currency. Edit those trades to add a rate.
+            </p>
+          )}
         </>
       )}
 

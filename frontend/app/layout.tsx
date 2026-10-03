@@ -1,11 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
+import { RegisterSW } from "@/components/RegisterSW";
 
 export const metadata: Metadata = {
   title: "Trading Journal",
@@ -32,7 +28,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={jetbrainsMono.className}>{children}</body>
+      <body style={{ fontFamily: "'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+        <RegisterSW />
+        {children}
+      </body>
     </html>
   );
 }

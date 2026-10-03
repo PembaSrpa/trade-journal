@@ -1,5 +1,7 @@
 "use client";
 
+import { UnconvertedBadge } from "@/components/UnconvertedBadge";
+import { exportTradesPdf } from "@/lib/exportPdf";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Download, FileText, Plus } from "lucide-react";
@@ -98,10 +100,16 @@ export default function JournalPage() {
 
   async function handleExport(format: "csv" | "pdf") {
     if (!selectedAccountId) return;
-    await apiDownload(
-      `/export?account_id=${selectedAccountId}&format=${format}`,
-      `trades.${format}`
-    );
+    // Export exactly the range currently shown in the list.
+    const range = preset === "custom" ? customRange ?? {} : presetRange(preset);
+    if (format === "pdf") {
+      await exportTradesPdf(selectedAccountId, range);
+      return;
+    }
+    const params = new URLSearchParams({ account_id: selectedAccountId, format: "csv" });
+    if (range.from) params.set("from", range.from);
+    if (range.to) params.set("to", range.to);
+    await apiDownload(`/export?${params.toString()}`, "trades.csv");
   }
 
   return (
@@ -190,6 +198,7 @@ export default function JournalPage() {
                     <p className="font-medium truncate">
                       {trade.pair} <span className="text-text-muted font-normal">· {trade.direction === "long" ? "Long" : "Short"}</span>
                     </p>
+                    {trade.pnl_unconverted && <UnconvertedBadge className="flex-shrink-0" />}
                     {trade.is_revenge_trade && (
                       <span className="text-xs bg-danger/15 text-danger border border-danger/30 rounded-full px-2 py-0.5 flex-shrink-0 flex items-center gap-1">
                         <AlertTriangle size={10} /> Revenge

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Archive, RefreshCw, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Archive, Trash2 } from "lucide-react";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useAccountContext, ACCOUNTS_CACHE_KEY } from "@/lib/AccountContext";
 import { clearCache } from "@/lib/dataCache";
 import { isCombinedSelection } from "@/lib/accountSelection";
-import { getPendingCount, flushQueue } from "@/lib/offlineSync";
+import { DataSettings } from "@/components/DataSettings";
 import { PlaybookManager } from "@/components/PlaybookManager";
 import { AccountListSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import type { Account, AccountType } from "@/lib/types";
@@ -19,8 +19,6 @@ export default function SettingsPage() {
     refreshAccounts,
     selectedAccountId,
     loading: accountsLoading,
-    accountsStatus,
-    triggerSync,
   } = useAccountContext();
   const confirmDialog = useConfirm();
   const [name, setName] = useState("");
@@ -30,21 +28,6 @@ export default function SettingsPage() {
   const [brokerName, setBrokerName] = useState("");
   const [leverage, setLeverage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-
-  useEffect(() => {
-    getPendingCount().then(setPendingCount);
-  }, [accountsStatus]);
-
-  async function handleSyncNow() {
-    setSyncing(true);
-    await flushQueue();
-    await refreshAccounts();
-    triggerSync();
-    setPendingCount(await getPendingCount());
-    setSyncing(false);
-  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -88,24 +71,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xl font-medium tracking-tight">Settings</p>
-        <div className="flex items-center gap-3">
-          {pendingCount > 0 && (
-            <p className="text-xs text-text-muted">
-              {pendingCount} trade{pendingCount === 1 ? "" : "s"} pending
-            </p>
-          )}
-          <button
-            onClick={handleSyncNow}
-            disabled={syncing}
-            className="flex items-center gap-1.5 text-xs flex-shrink-0"
-          >
-            <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
-            {syncing ? "Syncing..." : "Sync now"}
-          </button>
-        </div>
-      </div>
+      <p className="text-xl font-medium tracking-tight">Settings</p>
 
       <div>
         <p className="text-sm text-text-secondary mb-3">Your accounts</p>
@@ -260,6 +226,8 @@ export default function SettingsPage() {
         )}
       </div>
       </div>
+
+      <DataSettings />
     </div>
   );
 }
