@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import {
   TrendingUp, Target, Percent, Clock, TrendingDown, CircleDot,
@@ -57,7 +58,7 @@ export default function OverviewPage() {
     return (
       <div className="bg-surface border border-border rounded-2xl p-10 text-center max-w-md mx-auto mt-12">
         <p className="text-text-secondary mb-3">No accounts yet.</p>
-        <a href="/settings" className="text-accent-glow">Create your first account</a>
+        <Link href="/settings" className="text-accent-glow">Create your first account</Link>
       </div>
     );
   }

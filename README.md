@@ -1,4 +1,4 @@
-# Trading Journal
+# Trading Journal (offline)
 
 A personal trading journal that runs **entirely on your device** — no account, no server, no sign-in, no internet.
 Log trades, track performance, and spot psychological patterns (revenge trading, emotion vs. outcome, rule adherence).
@@ -17,6 +17,11 @@ It ships as a static website and as an Android app (Capacitor) from the same cod
   - **Merge** — adds only what's missing. Existing records are never overwritten or duplicated, so it's safe to run twice.
   - **Replace everything** — wipes this device's data and loads the backup. If writing fails partway, your previous data is restored.
 - Use export → import to move to a new phone or keep a safety copy.
+
+### Coming from the old Supabase version?
+Run once on a computer: `SUPABASE_URL=... SUPABASE_SERVICE_KEY=... node tools/migrate-from-supabase.mjs`
+(see the header of that file), then import the file it writes. Needs Node 18+, no dependencies. Sessions are recomputed
+under the new market-hours rule during import.
 
 ## Features
 - Accounts (demo/live), trades across forex, indices, stocks, crypto and commodities, tags, playbooks with rule checklists, notebook, chart screenshots.
@@ -37,3 +42,5 @@ It ships as a static website and as an Android app (Capacitor) from the same cod
 - **Revenge trade:** opened within 30 minutes of the exit of the previous closed trade, if that trade lost (per account).
 - **Date ranges:** a trade belongs to the period it was *opened* in. With a range selected the equity curve starts from the balance at the range start (starting balance + everything before it) and drawdown is measured inside the range.
 - Clearing a trade's exit price re-opens it.
+
+  cd frontend && npm run android:build && cd android && ./gradlew assembleDebug

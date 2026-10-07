@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAccountContext } from "@/lib/AccountContext";
 import { Dropdown, type DropdownOption } from "@/components/Dropdown";
 
@@ -12,9 +13,9 @@ export function AccountSwitcher({ className }: { className?: string }) {
 
   if (accounts.length === 0) {
     return (
-      <a href="/settings" className="text-sm text-accent-glow">
+      <Link href="/settings" className="text-sm text-accent-glow">
         Create an account
-      </a>
+      </Link>
     );
   }
 
